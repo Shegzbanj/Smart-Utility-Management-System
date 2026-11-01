@@ -1,0 +1,3411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f7f4">
+  <meta name="description" content="Meterly helps you track utility bills, manage payment reminders, review estimated spending, and keep digital payment receipts in one place.">
+  <title>Meterly | Smart utility management</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18241f;
+      --muted: #738078;
+      --green: #2f7654;
+      --green-dark: #245e42;
+      --line: #e4e9e4;
+      --paper: #ffffff;
+      --canvas: #f5f7f4;
+      --sage: #eaf2e9;
+      --soft-sage: #f3f7f2;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 36px 24px;
+      background:
+        radial-gradient(ellipse at 12% 8%, rgba(218, 233, 218, .72), transparent 34%),
+        radial-gradient(ellipse at 90% 92%, rgba(230, 237, 228, .42), transparent 30%),
+        var(--canvas);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body:has(#dashboard:not([hidden])) { place-items: start center; }
+
+    button, input { font: inherit; }
+
+    .page {
+      width: min(100%, 1080px);
+      min-height: 670px;
+      display: grid;
+      grid-template-columns: 1.04fr .96fr;
+      overflow: hidden;
+      border: 1px solid rgba(28, 56, 41, .08);
+      border-radius: 26px;
+      background: var(--paper);
+      box-shadow: 0 28px 90px rgba(30, 52, 39, .11), 0 3px 12px rgba(30, 52, 39, .035);
+    }
+
+    .welcome {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      padding: 44px clamp(34px, 4vw, 52px) 34px;
+      background:
+        radial-gradient(ellipse at 12% 85%, rgba(255, 255, 255, .6), transparent 42%),
+        linear-gradient(145deg, #edf4ec 0%, var(--sage) 55%, #e5efe4 100%);
+    }
+
+    .welcome::before, .welcome::after {
+      position: absolute;
+      content: "";
+      border: 1px solid rgba(47, 118, 84, .10);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .welcome::before { width: 490px; height: 490px; right: -300px; top: 105px; }
+    .welcome::after { width: 370px; height: 370px; right: -225px; top: 165px; }
+
+    .brand {
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .brand-name {
+      font-family: "Aptos Display", "Segoe UI Variable Display", "Trebuchet MS", system-ui, sans-serif;
+      font-size: 22px;
+      font-weight: 760;
+      letter-spacing: -1.15px;
+      line-height: 1;
+    }
+
+    .brand-name span {
+      color: var(--green);
+      font-weight: 650;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, .42);
+      border-radius: 13px;
+      background: linear-gradient(145deg, #3f9168, #245e42);
+      color: white;
+      box-shadow: 0 5px 12px rgba(36, 94, 66, .18), inset 0 1px 0 rgba(255, 255, 255, .2);
+    }
+
+    .brand-mark svg { width: 24px; height: 24px; }
+    .mobile-brand .brand-mark { width: 38px; height: 38px; }
+    .dashboard-header .brand-mark { width: 38px; height: 38px; }
+
+    .welcome-copy {
+      z-index: 1;
+      max-width: 420px;
+      margin: 38px 0 26px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      margin: 0 0 17px;
+      padding: 7px 10px;
+      border: 1px solid rgba(47, 118, 84, .10);
+      border-radius: 99px;
+      background: rgba(255, 255, 255, .48);
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 410px;
+      margin: 0;
+      font-size: clamp(38px, 4vw, 50px);
+      font-weight: 680;
+      letter-spacing: -2.5px;
+      line-height: 1.06;
+    }
+
+    .welcome-copy > p:last-child {
+      max-width: 355px;
+      margin: 17px 0 0;
+      color: #5f6f65;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .bill-card {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 390px);
+      margin: 31px 0 16px;
+      padding: 22px;
+      border: 1px solid rgba(255, 255, 255, .94);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .82);
+      box-shadow: 0 14px 34px rgba(41, 82, 57, .075);
+      backdrop-filter: blur(12px);
+    }
+
+    .bill-top, .bill-bottom, .bill-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .bill-label { justify-content: flex-start; gap: 8px; color: #69766e; font-size: 12px; }
+    .bill-label svg { width: 16px; height: 16px; color: var(--green); }
+    .bill-top > span:last-child { color: #65736a; font-size: 11px; }
+    .bill-amount { margin: 19px 0 21px; font-size: 30px; font-weight: 700; letter-spacing: -1px; }
+    .bill-amount span { color: #8a958e; font-size: 14px; font-weight: 450; letter-spacing: 0; }
+
+    .bill-bottom {
+      padding-top: 14px;
+      border-top: 1px solid #edf0ed;
+      color: #65736a;
+      font-size: 11px;
+    }
+
+    .due-pill {
+      padding: 6px 9px;
+      border-radius: 99px;
+      background: #edf5ed;
+      color: var(--green-dark);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .welcome-foot {
+      z-index: 1;
+      color: #718077;
+      font-size: 11px;
+    }
+
+    .form-side {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      padding: 52px clamp(36px, 5.4vw, 72px);
+      background:
+        radial-gradient(ellipse at 100% 0%, rgba(243, 247, 242, .72), transparent 37%),
+        #fff;
+    }
+
+    .form-wrap { width: 100%; max-width: 370px; min-width: 0; }
+    .mobile-brand { display: none; }
+    .mobile-brand[hidden] { display: none; }
+
+    .form-wrap h2 {
+      margin: 0 0 10px;
+      font-size: 31px;
+      font-weight: 680;
+      letter-spacing: -1.25px;
+    }
+
+    .form-intro {
+      margin: 0 0 29px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .field { margin-bottom: 19px; }
+
+    .field label {
+      display: block;
+      margin-bottom: 9px;
+      color: #35433b;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .input-wrap { position: relative; }
+
+    .field input, .field select {
+      width: 100%;
+      height: 50px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+      box-shadow: 0 1px 2px rgba(24, 36, 31, .025);
+      transition: border-color .18s, box-shadow .18s, background .18s;
+    }
+
+    .field input::placeholder { color: #a0aaa3; }
+    .field input:focus, .field select:focus { border-color: #72a588; box-shadow: 0 0 0 3px rgba(47, 118, 84, .11); }
+    .password-input { padding-right: 72px !important; }
+    .password-help { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+
+    .toggle-password {
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      padding: 5px;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: #64736a;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .form-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 2px 0 22px;
+      font-size: 11px;
+    }
+
+    .remember {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #66736b;
+      cursor: pointer;
+    }
+
+    .remember input { width: 14px; height: 14px; margin: 0; accent-color: var(--green); }
+
+    a { color: var(--green); text-decoration: none; }
+    a:hover { color: var(--green-dark); text-decoration: underline; }
+    .form-options a, .switch-copy a { font-weight: 650; }
+
+    .submit-button {
+      width: 100%;
+      height: 50px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--green);
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 680;
+      transition: background .18s, transform .18s;
+    }
+
+    .submit-button:hover { transform: translateY(-1px); background: var(--green-dark); }
+    .admin-entry-button {
+      width: 100%;
+      min-height: 44px;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: var(--green-dark);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .admin-entry-button:hover { border-color: #a9c4b1; background: #f7faf7; }
+    .submit-button:focus-visible, a:focus-visible, .toggle-password:focus-visible {
+      outline: 3px solid rgba(47, 118, 84, .35);
+      outline-offset: 3px;
+    }
+    button:focus-visible {
+      outline: 3px solid rgba(47, 118, 84, .35);
+      outline-offset: 3px;
+    }
+
+    .switch-copy {
+      margin: 25px 0 0;
+      color: #78847c;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .notice {
+      min-height: 17px;
+      margin: 14px 0 0;
+      color: var(--green-dark);
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .form-panel[hidden] { display: none; }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+
+    .dashboard[hidden], .utility-form-wrap[hidden] { display: none; }
+
+    .page:has(#dashboard:not([hidden])) {
+      width: min(100%, 1240px);
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .page:has(#dashboard:not([hidden])) .welcome { display: none; }
+    .page:has(#dashboard:not([hidden])) .form-side { padding: clamp(24px, 4vw, 48px); align-items: stretch; }
+    .page:has(#dashboard:not([hidden])) .form-wrap { width: 100%; max-width: none; }
+
+    .dashboard {
+      width: 100%;
+      padding: 0;
+    }
+
+    .dashboard-header, .dashboard-title-row, .utility-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .dashboard-header { margin-bottom: 30px; }
+    .sign-out {
+      border: 0;
+      padding: 8px 0 8px 8px;
+      background: transparent;
+      color: var(--green);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .dashboard h2 { margin: 0 0 8px; font-size: clamp(25px, 3vw, 32px); letter-spacing: -1.1px; }
+    .dashboard-intro { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+
+    .dashboard-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    .summary-card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcfb;
+    }
+
+    .summary-label { display: block; color: var(--muted); font-size: 12px; }
+    .summary-value { display: block; margin-top: 7px; color: var(--ink); font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+
+    .dashboard-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .admin-workspace { margin-top: 24px; }
+    .admin-notice {
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border: 1px solid #ead9b6;
+      border-radius: 10px;
+      background: #fff9eb;
+      color: #72531c;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .admin-nav { display: flex; gap: 7px; overflow-x: auto; margin: 0 0 18px; padding: 0 0 4px; }
+    .admin-nav button {
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #526158;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 650;
+    }
+    .admin-nav button[aria-current="page"] { border-color: var(--green); background: var(--soft-sage); color: var(--green-dark); }
+    .admin-section[hidden] { display: none; }
+    .admin-section > h3 { margin: 0 0 14px; font-size: 16px; }
+    .admin-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .admin-panel {
+      margin-top: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+    .admin-panel h4 { margin: 0 0 12px; font-size: 13px; }
+    .admin-toolbar { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 12px; }
+    .admin-toolbar input, .admin-toolbar select, .admin-settings input, .admin-settings select {
+      min-height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 11px;
+    }
+    .admin-toolbar input { flex: 1 1 180px; }
+    .admin-table-wrap { overflow-x: auto; }
+    .admin-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 11px; }
+    .admin-table th, .admin-table td { padding: 10px 8px; border-bottom: 1px solid #edf0ed; white-space: nowrap; }
+    .admin-table th { color: var(--muted); font-size: 10px; font-weight: 650; }
+    .admin-table td { color: #35433b; }
+    .admin-table .empty-row { padding: 18px 8px; color: var(--muted); text-align: center; white-space: normal; }
+    .admin-table input, .admin-table select { max-width: 130px; min-height: 34px; padding: 0 7px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+    .admin-action { min-height: 32px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--green-dark); cursor: pointer; font-size: 10px; font-weight: 650; }
+    .admin-action.danger { color: #984b41; }
+    .admin-action + .admin-action { margin-left: 4px; }
+    .admin-settings { display: grid; gap: 12px; max-width: 440px; }
+    .admin-section-actions { margin-top: 18px; }
+    .admin-clear-button { margin-top: 12px; }
+    .admin-settings label { display: grid; gap: 6px; color: #526158; font-size: 11px; font-weight: 600; }
+    .admin-status { min-height: 18px; margin: 10px 0 0; color: var(--green-dark); font-size: 11px; }
+    .admin-empty { padding: 17px 10px; color: var(--muted); text-align: center; font-size: 11px; }
+
+    .add-utility-button {
+      flex: 0 0 auto;
+      min-height: 42px;
+      padding: 0 15px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--green);
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .add-utility-button:hover { background: var(--green-dark); }
+    .add-utility-button.secondary { border: 1px solid var(--line); background: #fff; color: var(--green-dark); }
+    .add-utility-button.secondary:hover { border-color: #a9c4b1; background: #f7faf7; }
+    .utility-list { display: grid; gap: 12px; margin-top: 27px; }
+    .customer-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 22px; }
+    .feature-panel { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 15px; background: #fff; box-shadow: 0 5px 18px rgba(30, 52, 39, .035); }
+    .feature-panel h3 { margin: 0; font-size: 16px; letter-spacing: -.3px; }
+    .feature-panel > p { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .feature-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .feature-stat { display: flex; justify-content: space-between; gap: 12px; margin-top: 15px; padding: 11px 0; border-top: 1px solid #edf0ed; font-size: 12px; }
+    .feature-stat span { color: var(--muted); }
+    .feature-stat strong { text-align: right; }
+    .feature-list { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .feature-list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #edf0ed; font-size: 12px; }
+    .feature-list-item > div { min-width: 0; }
+    .feature-list-item strong, .feature-list-item span { display: block; overflow-wrap: anywhere; }
+    .feature-list-item span { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .feature-empty { margin: 14px 0 0; padding: 15px; border: 1px dashed #d8e1d9; border-radius: 10px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.55; }
+    .feature-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .analytics-chart { display: grid; grid-template-columns: minmax(140px, 190px) minmax(0, 1fr); align-items: center; gap: 18px; margin-top: 16px; }
+    .analytics-pie { display: block; width: 100%; height: auto; overflow: visible; }
+    .analytics-legend { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .analytics-legend-item { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 11px; }
+    .analytics-legend-swatch { width: 10px; height: 10px; border-radius: 50%; }
+    .analytics-legend-item span:nth-child(2) { overflow-wrap: anywhere; color: var(--muted); }
+    .analytics-legend-item strong { text-align: right; }
+    .analytics-month-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 11px; }
+    .analytics-month-table th, .analytics-month-table td { padding: 9px 6px; border-top: 1px solid #edf0ed; text-align: right; }
+    .analytics-month-table th:first-child, .analytics-month-table td:first-child { text-align: left; }
+    .analytics-month-table th { color: var(--muted); font-weight: 600; }
+    .analytics-month-table td:first-child { color: var(--ink); }
+    .analytics-trend { display: grid; gap: 9px; margin-top: 16px; }
+    .analytics-trend-item { display: grid; grid-template-columns: minmax(75px, auto) minmax(40px, 1fr) auto; align-items: center; gap: 9px; font-size: 11px; }
+    .analytics-trend-bar { height: 8px; overflow: hidden; border-radius: 99px; background: #edf0ed; }
+    .analytics-trend-bar span { display: block; height: 100%; border-radius: inherit; background: var(--green); }
+    .notification-status { margin-top: 9px !important; }
+    .feature-toggle[aria-pressed="true"] { border-color: #cfe2d2; background: #f0f7f0; color: var(--green-dark); }
+    .receipt-dialog { width: min(calc(100% - 28px), 540px); max-height: min(88vh, 760px); overflow: auto; padding: 0; border: 0; border-radius: 18px; color: var(--ink); box-shadow: 0 24px 80px rgba(20, 38, 27, .24); }
+    .receipt-content { position: relative; isolation: isolate; overflow: hidden; padding: clamp(20px, 5vw, 34px); background: #fff; }
+    .receipt-watermark {
+      position: absolute;
+      z-index: 0;
+      inset: 32% 5% auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--green);
+      opacity: .08;
+      transform: rotate(-22deg);
+      pointer-events: none;
+      user-select: none;
+    }
+    .receipt-watermark svg { width: clamp(64px, 17vw, 110px); height: auto; }
+    .receipt-watermark span { font-family: "Aptos Display", "Segoe UI Variable Display", "Trebuchet MS", system-ui, sans-serif; font-size: clamp(44px, 11vw, 76px); font-weight: 800; letter-spacing: -4px; }
+    .receipt-content > :not(.receipt-watermark) { position: relative; z-index: 1; }
+    .receipt-content h2 { margin: 0 0 5px; font-size: 24px; }
+    .receipt-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--ink); font-family: "Aptos Display", "Segoe UI Variable Display", "Trebuchet MS", system-ui, sans-serif; font-size: 18px; font-weight: 760; letter-spacing: -.7px; }
+    .receipt-brand .brand-mark { width: 32px; height: 32px; border-radius: 10px; }
+    .receipt-brand .brand-mark svg { width: 19px; height: 19px; }
+    .receipt-brand .brand-name { font-size: 20px; }
+    .receipt-content .utility-details { margin: 20px 0; }
+    .receipt-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+    .receipt-actions button { flex: 1 1 140px; }
+    .provider-form { display: grid; grid-template-columns: minmax(100px, .7fr) minmax(150px, 1.4fr) auto; align-items: end; gap: 10px; margin-bottom: 14px; }
+    .provider-form .field { margin: 0; }
+    .provider-state { color: var(--green-dark); font-weight: 650; }
+
+    .empty-state {
+      margin-top: 26px;
+      padding: 28px 20px;
+      border: 1px dashed #d8e1d9;
+      border-radius: 13px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .utility-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(30, 52, 39, .035);
+    }
+
+    .utility-reminder {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #f3f7f2;
+      color: var(--green-dark);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .utility-reminder[hidden] { display: none; }
+    .utility-reminder.is-overdue { background: #fbf0ed; color: #9a4339; }
+    .utility-reminder.is-due-today { background: #fff6e8; color: #8a5a13; }
+
+    .utility-kind {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .utility-kind::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #7cad88;
+      content: "";
+    }
+
+    .remove-utility {
+      border: 0;
+      padding: 5px;
+      background: transparent;
+      color: #8b5f58;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .utility-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .utility-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid #edf0ed;
+    }
+
+    .utility-action {
+      min-height: 35px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #526158;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .utility-action:hover { border-color: #a9c4b1; background: #f7faf7; }
+    .utility-action.primary { border-color: var(--green); background: var(--green); color: #fff; }
+    .utility-action.primary:hover { border-color: var(--green-dark); background: var(--green-dark); }
+    .utility-action[aria-pressed="true"] { border-color: #cfe2d2; background: #f0f7f0; color: var(--green-dark); }
+
+    .utility-detail-label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .utility-detail-value {
+      overflow-wrap: anywhere;
+      color: #35433b;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .utility-form-wrap {
+      margin-top: 24px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fbfcfb;
+    }
+
+    .utility-form-wrap h3 { margin: 0 0 18px; font-size: 16px; letter-spacing: -.3px; }
+    .utility-form-wrap .field { margin-bottom: 15px; }
+    .utility-form-wrap .field select { background: #fff; }
+    .field-help { margin: 7px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .field-help[hidden], [hidden] { display: none !important; }
+    .utility-form-actions { display: flex; gap: 10px; margin-top: 4px; }
+    .utility-form-actions button { flex: 1; }
+
+    .cancel-button {
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: #59665e;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .demo-note { margin: 20px 0 0; color: #89948c; font-size: 10px; line-height: 1.6; }
+
+    .payment-dialog {
+      width: min(calc(100% - 32px), 430px);
+      padding: 0;
+      border: 0;
+      border-radius: 18px;
+      color: var(--ink);
+      box-shadow: 0 24px 80px rgba(20, 38, 27, .24);
+    }
+
+    .payment-dialog::backdrop { background: rgba(18, 31, 23, .46); backdrop-filter: blur(3px); }
+    .payment-dialog-content { padding: 27px; }
+    .payment-dialog h2 { margin: 0 0 8px; font-size: 22px; letter-spacing: -.7px; }
+    .payment-dialog p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .payment-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 18px 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fbfcfb;
+      font-size: 12px;
+    }
+
+    .payment-summary strong { font-size: 16px; }
+    .payment-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .payment-actions button { flex: 1; }
+    .payment-result { margin-bottom: 0; color: var(--green-dark) !important; }
+    .payment-method-options { display: grid; gap: 9px; margin: 18px 0; border: 0; padding: 0; }
+    .payment-method-options legend { margin-bottom: 9px; color: #35433b; font-size: 12px; font-weight: 650; }
+    .payment-method-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 49px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: #35433b;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .payment-method-option:has(input:checked) { border-color: var(--green); background: #f4f8f4; }
+    .payment-method-option input { margin: 0; accent-color: var(--green); }
+    #data-checkout-submit:disabled, #review-payment:disabled { cursor: not-allowed; opacity: .5; }
+    .checkout-stage[hidden], .payment-method-options[hidden] { display: none !important; }
+    .demo-payment-card, .transfer-instructions, .demo-receipt {
+      margin-top: 16px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #f8faf8;
+    }
+    .demo-payment-card strong, .transfer-instructions strong, .demo-receipt strong { color: var(--ink); }
+    .demo-payment-card p, .transfer-instructions p, .demo-receipt p { margin: 6px 0 0; }
+    .transfer-reference {
+      display: block;
+      margin-top: 8px;
+      color: var(--green-dark);
+      font-size: 16px;
+      font-weight: 750;
+      letter-spacing: .7px;
+    }
+    .demo-receipt { border-color: #cfe2d2; background: #f1f8f2; }
+    .demo-receipt[hidden] { display: none !important; }
+    #data-demo-receipt, #electricity-demo-receipt { position: relative; isolation: isolate; overflow: hidden; }
+    #data-demo-receipt::before, #electricity-demo-receipt::before {
+      position: absolute;
+      z-index: 0;
+      right: 12px;
+      bottom: 12px;
+      color: var(--green);
+      content: "Meterly";
+      font-family: "Aptos Display", "Segoe UI Variable Display", "Trebuchet MS", system-ui, sans-serif;
+      font-size: clamp(36px, 9vw, 64px);
+      font-weight: 800;
+      letter-spacing: -3px;
+      opacity: .08;
+      transform: rotate(-17deg);
+      pointer-events: none;
+    }
+    #data-demo-receipt > *, #electricity-demo-receipt > * { position: relative; z-index: 1; }
+    .success-receipt-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 11px; }
+    .success-receipt-brand .brand-mark { width: 27px; height: 27px; border-radius: 8px; }
+    .success-receipt-brand .brand-mark svg { width: 17px; height: 17px; }
+    .success-receipt-brand .brand-name { font-size: 17px; }
+    .success-receipt-brand small { color: var(--muted); font-size: 10px; }
+
+    .data-purchase-fields[hidden], .electricity-fields[hidden] { display: none !important; }
+    .data-section {
+      margin-top: 19px;
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .data-section h4 { margin: 0 0 13px; font-size: 12px; }
+    .phone-field { display: flex; align-items: center; gap: 8px; }
+    .country-code {
+      height: 48px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #f8faf8;
+      color: #526158;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .phone-field input { flex: 1; min-width: 0; }
+    .network-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .network-button {
+      min-height: 40px;
+      padding: 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: #526158;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .network-button:hover { border-color: #a9c4b1; }
+    .network-button[aria-pressed="true"] { border-color: var(--green); background: #eff6f0; color: var(--green-dark); box-shadow: inset 0 0 0 1px var(--green); }
+    .network-button:disabled { cursor: not-allowed; opacity: .48; }
+    .network-status { min-height: 16px; margin: 9px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .network-status[data-state="error"] { color: #a14035; }
+    .bundle-tabs { display: flex; gap: 7px; overflow-x: auto; padding: 1px 1px 8px; }
+    .bundle-tab {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      background: #fff;
+      color: #65736a;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    .bundle-tab[aria-selected="true"] { border-color: #cfe2d2; background: #eff6f0; color: var(--green-dark); }
+    .bundle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .bundle-option {
+      min-height: 78px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .bundle-option:hover { border-color: #a9c4b1; }
+    .bundle-option[aria-pressed="true"] { border-color: var(--green); background: #f4f8f4; box-shadow: inset 0 0 0 1px var(--green); }
+    .bundle-size, .bundle-price { display: block; }
+    .bundle-size { font-size: 14px; font-weight: 700; }
+    .bundle-price { margin-top: 7px; color: var(--green-dark); font-size: 12px; font-weight: 700; }
+    .hot-deal { display: inline-block; margin-left: 5px; color: #a46424; font-size: 9px; font-weight: 700; }
+    .bundle-empty { margin: 4px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .data-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 13px;
+      border-radius: 9px;
+      background: #f6f8f6;
+      font-size: 11px;
+    }
+
+    .data-summary strong { font-size: 15px; }
+    .data-purchase-fields .submit-button { margin-top: 14px; }
+    .data-purchase-fields .submit-button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
+    .data-demo-note { margin: 13px 0 0; color: #89948c; font-size: 10px; line-height: 1.55; }
+
+    @media (max-width: 900px) {
+      body { padding: 24px 16px; }
+      .page { width: min(100%, 700px); min-height: 0; grid-template-columns: minmax(0, 1fr); border-radius: 22px; }
+      .welcome { display: none; }
+      .form-side { padding: 40px clamp(28px, 6vw, 56px) 36px; }
+      .mobile-brand { display: inline-flex; margin-bottom: 45px; }
+      .form-wrap h2 { font-size: 29px; }
+      .dashboard { padding: 0; }
+      .dashboard-header { margin-bottom: 32px; }
+      .dashboard-title-row { align-items: stretch; flex-direction: column; }
+      .add-utility-button { padding: 0 11px; }
+      .dashboard-actions { width: 100%; flex-direction: column; align-items: stretch; }
+      .dashboard-actions button { width: 100%; }
+      .dashboard-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .admin-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .page:has(#dashboard:not([hidden])) .form-side { padding: 30px clamp(20px, 5vw, 42px); }
+      .feature-panel { padding: 16px; }
+      .network-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bundle-tabs { flex-wrap: wrap; overflow: visible; }
+    }
+
+    @media (min-width: 901px) and (max-height: 760px) {
+      body { padding: 20px 24px; }
+      .page { min-height: min(670px, calc(100vh - 40px)); }
+      .welcome { padding: 30px 36px 24px; }
+      .welcome-copy { margin: 20px 0 12px; }
+      .eyebrow { margin-bottom: 10px; }
+      .welcome-copy > p:last-child { margin-top: 12px; }
+      .bill-card { margin: 18px 0 8px; padding: 18px; }
+      .bill-amount { margin: 13px 0 15px; }
+      .form-side { padding-top: 28px; padding-bottom: 28px; }
+      .form-intro { margin-bottom: 20px; }
+      .field { margin-bottom: 16px; }
+      .form-options { margin-bottom: 18px; }
+      .switch-copy { margin-top: 18px; }
+    }
+
+    @media (max-width: 380px) {
+      body { padding: 14px 10px; }
+      .page { border-radius: 18px; }
+      .form-side { padding: 30px 23px 27px; }
+      .mobile-brand { margin-bottom: 36px; }
+      .form-options { font-size: 10px; }
+      .utility-form-actions { flex-direction: column; }
+    }
+    @media (max-width: 560px) {
+      body { padding: 10px; }
+      .page { border-radius: 16px; }
+      .page:has(#dashboard:not([hidden])) .form-side { padding: 22px 15px; }
+      .customer-features { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+      .dashboard-summary, .admin-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .summary-card { padding: 13px; }
+      .summary-label { font-size: 11px; }
+      .summary-value { font-size: 19px; }
+      .dashboard-title-row { gap: 14px; }
+      .dashboard-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+      .dashboard-actions button { width: 100%; }
+      .feature-list-item { align-items: flex-start; }
+      .analytics-chart { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 12px; }
+      .analytics-pie { width: min(100%, 190px); }
+      .analytics-legend { width: 100%; }
+      .provider-form { grid-template-columns: minmax(0, 1fr); }
+      .admin-nav { margin-right: -4px; }
+      .utility-details { gap: 11px; }
+      .payment-dialog-content { padding: 21px; }
+    }
+    @media print {
+      body * { visibility: hidden !important; }
+      #digital-receipt-dialog, #digital-receipt-dialog * { visibility: visible !important; }
+      #digital-receipt-dialog { position: fixed; inset: 0; width: 100%; max-width: none; max-height: none; margin: 0; border-radius: 0; box-shadow: none; }
+      #digital-receipt-dialog::backdrop { background: #fff; }
+      #digital-receipt-dialog .receipt-actions { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="welcome" aria-label="About Meterly">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M13.3 2.4 5.2 13h5.6l-.6 8.6 8.8-12h-5.5l.5-7.2Z" fill="currentColor"/>
+            <circle cx="18.7" cy="5.1" r="2" fill="#b9e2c7"/>
+          </svg>
+        </span>
+        <span class="brand-name">Meter<span>ly</span></span>
+      </div>
+
+      <div class="welcome-copy">
+        <p class="eyebrow">Your home, in balance</p>
+        <h1>Utilities made a little simpler.</h1>
+        <p>Keep your bills, usage and due dates together in one calm, clear place.</p>
+
+        <div class="bill-card" aria-label="Example upcoming bill">
+          <div class="bill-top">
+            <span class="bill-label">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m13 2-8 12h6l-1 8 9-13h-6l1-7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              </svg>
+              Next energy bill
+            </span>
+            <span>Home account</span>
+          </div>
+          <p class="bill-amount">₦84,200 <span>estimated</span></p>
+          <div class="bill-bottom">
+            <span>Due in 5 days</span>
+            <span class="due-pill">Reminder on</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="welcome-foot">A clearer view of your household utilities.</div>
+    </section>
+
+    <section class="form-side" aria-label="Account access">
+      <div class="form-wrap">
+        <div class="brand mobile-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M13.3 2.4 5.2 13h5.6l-.6 8.6 8.8-12h-5.5l.5-7.2Z" fill="currentColor"/>
+              <circle cx="18.7" cy="5.1" r="2" fill="#b9e2c7"/>
+            </svg>
+          </span>
+          <span class="brand-name">Meter<span>ly</span></span>
+        </div>
+
+        <section class="form-panel" id="login-panel">
+          <h2>Welcome back</h2>
+          <p class="form-intro">Sign in to manage your household utilities.</p>
+          <form id="login-form">
+            <div class="field">
+              <label for="login-email">Email address</label>
+              <input id="login-email" name="email" type="email" autocomplete="username" placeholder="you@example.com" required>
+            </div>
+            <div class="field">
+              <label for="login-password">Password</label>
+              <div class="input-wrap">
+                <input class="password-input" id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+                <button class="toggle-password" type="button" aria-controls="login-password" aria-label="Show password">Show</button>
+              </div>
+            </div>
+            <div class="form-options">
+              <label class="remember"><input type="checkbox" name="remember"> Remember me</label>
+              <a href="#forgot" data-panel="forgot-panel">Forgot password?</a>
+            </div>
+            <button class="submit-button" type="submit">Sign in</button>
+            <p class="notice" role="status" aria-live="polite"></p>
+          </form>
+          <button class="admin-entry-button" id="open-admin-demo" type="button">Open admin dashboard (demo)</button>
+          <p class="switch-copy">New to Meterly? <a href="#create-account" data-panel="signup-panel">Create an account</a></p>
+        </section>
+
+        <section class="form-panel" id="signup-panel" hidden>
+          <h2>Create your account</h2>
+          <p class="form-intro">Start keeping all your utility bills in one place.</p>
+          <form id="signup-form">
+            <div class="field">
+              <label for="signup-name">Full name</label>
+              <input id="signup-name" name="name" type="text" autocomplete="name" placeholder="Your name" required>
+            </div>
+            <div class="field">
+              <label for="signup-email">Email address</label>
+              <input id="signup-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+            </div>
+            <div class="field">
+              <label for="signup-password">Create a strong password</label>
+              <div class="input-wrap">
+                <input class="password-input" id="signup-password" name="password" type="password" autocomplete="new-password" minlength="12" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{12,}" title="Use at least 12 characters, including an uppercase letter, a lowercase letter, a number, and a symbol." aria-describedby="password-requirements" placeholder="Create a strong password" required>
+                <button class="toggle-password" type="button" aria-controls="signup-password" aria-label="Show password">Show</button>
+              </div>
+              <p class="password-help" id="password-requirements">Use 12 or more characters, with at least one uppercase letter, one lowercase letter, one number and one symbol.</p>
+            </div>
+            <button class="submit-button" type="submit">Create account</button>
+            <p class="notice" role="status" aria-live="polite"></p>
+          </form>
+          <p class="switch-copy">Already have an account? <a href="#login" data-panel="login-panel">Sign in</a></p>
+        </section>
+
+        <section class="form-panel" id="forgot-panel" hidden>
+          <h2>Reset your password</h2>
+          <p class="form-intro">Enter the email address on your account and we'll send you a reset link.</p>
+          <form data-message="Password reset is a design preview. Connect your email service to send a reset link.">
+            <div class="field">
+              <label for="reset-email">Email address</label>
+              <input id="reset-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+            </div>
+            <button class="submit-button" type="submit">Send reset link</button>
+            <p class="notice" role="status" aria-live="polite"></p>
+          </form>
+          <p class="switch-copy"><a href="#login" data-panel="login-panel">Back to sign in</a></p>
+        </section>
+
+        <section class="dashboard" id="dashboard" aria-label="Utility account management" hidden>
+          <div class="dashboard-header">
+            <div class="brand">
+              <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M13.3 2.4 5.2 13h5.6l-.6 8.6 8.8-12h-5.5l.5-7.2Z" fill="currentColor"/>
+                  <circle cx="18.7" cy="5.1" r="2" fill="#b9e2c7"/>
+                </svg>
+              </span>
+              <span class="brand-name">Meter<span>ly</span></span>
+            </div>
+            <button class="sign-out" id="sign-out" type="button">Sign out</button>
+          </div>
+
+          <div class="dashboard-title-row">
+            <div>
+              <h2>Your utilities</h2>
+              <p class="dashboard-intro">Manage electricity bills and mobile data in one place.</p>
+            </div>
+            <div class="dashboard-actions">
+              <button class="add-utility-button secondary" id="open-admin-dashboard" type="button">Admin dashboard</button>
+              <button class="add-utility-button" id="show-utility-form" type="button">+ Add utility</button>
+            </div>
+          </div>
+
+          <div id="dashboard-home">
+          <div class="dashboard-summary" aria-label="Utility account summary">
+            <div class="summary-card">
+              <span class="summary-label">Accounts added</span>
+              <strong class="summary-value" id="account-count">0</strong>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Total bill amount</span>
+              <strong class="summary-value" id="upcoming-total">₦0</strong>
+            </div>
+          </div>
+
+          <section class="customer-features" aria-label="Bill and payment tools">
+            <article class="feature-panel" id="bill-tracking-panel">
+              <div class="feature-panel-head">
+                <div><h3>Bill tracking</h3><p>View bills due within 7 days or already overdue.</p></div>
+                <button class="admin-action" id="track-bills-button" type="button">View bills</button>
+              </div>
+              <div class="feature-stat"><span>Tracked bills</span><strong id="tracked-bill-count">0</strong></div>
+              <div class="feature-stat"><span>Due soon or overdue</span><strong id="due-bill-count">0</strong></div>
+              <ul class="feature-list" id="bill-tracking-list"></ul>
+              <p class="feature-empty" id="bill-tracking-empty">No bills are due within 7 days. Add a utility account to start tracking.</p>
+            </article>
+            <article class="feature-panel" id="payment-reminders-panel">
+              <div class="feature-panel-head">
+                <div><h3>Payment reminders</h3><p>Control reminders for tracked bills and data bundle expiry dates.</p></div>
+                <button class="admin-action feature-toggle" id="toggle-all-reminders" type="button" aria-pressed="true">Reminders on</button>
+              </div>
+              <div class="feature-stat"><span>Reminders enabled</span><strong id="enabled-reminder-count">0</strong></div>
+              <ul class="feature-list" id="reminder-list"></ul>
+              <p class="feature-empty" id="reminder-empty">Bills and internet purchases appear here with their reminder dates.</p>
+              <div class="feature-actions"><button class="admin-action" id="enable-browser-notifications" type="button">Enable browser notifications</button></div>
+              <p class="field-help notification-status" id="notification-status" role="status" aria-live="polite"></p>
+            </article>
+            <article class="feature-panel" id="usage-analytics-panel">
+              <div class="feature-panel-head">
+                <div><h3>Estimated Usage and Spending Analytics</h3><p>Estimated electricity bills plus recorded electricity and internet purchases. Live meter readings are not connected; history is limited to this page session.</p></div>
+              </div>
+              <div class="feature-stat"><span>Current month estimate + purchases</span><strong id="analytics-current-total">₦0</strong></div>
+              <div class="feature-stat"><span>Successful demo payments this month</span><strong id="analytics-paid-total">₦0</strong></div>
+              <h4>Current month vs previous month</h4>
+              <div id="analytics-monthly-comparison" aria-live="polite"></div>
+              <h4>Monthly spending trend · last 6 months</h4>
+              <div id="analytics-monthly-trend" class="analytics-trend" aria-live="polite"></div>
+              <div id="analytics-breakdown" aria-live="polite"></div>
+              <form class="provider-form" id="usage-budget-form">
+                <div class="field"><label for="usage-budget">Monthly bill budget (₦)</label><input id="usage-budget" name="budget" type="number" min="1" step="1" value="100000" required></div>
+                <button class="admin-action" type="submit">Set budget</button>
+              </form>
+              <div class="feature-stat"><span>Budget remaining</span><strong id="analytics-budget-remaining">₦100,000</strong></div>
+              <p class="admin-status" id="usage-budget-status" role="status" aria-live="polite"></p>
+              <div class="feature-actions"><button class="admin-action" id="export-analytics" type="button">Export analytics CSV</button></div>
+            </article>
+            <article class="feature-panel" id="digital-receipts-panel">
+              <div class="feature-panel-head">
+                <div><h3>Digital receipts</h3><p>View or download receipts for completed demo payments.</p></div>
+              </div>
+              <div class="feature-stat"><span>Receipts available</span><strong id="digital-receipt-count">0</strong></div>
+              <ul class="feature-list" id="digital-receipt-list"></ul>
+              <p class="feature-empty" id="digital-receipts-empty">Completed payment receipts will appear here.</p>
+            </article>
+          </section>
+
+          <div class="utility-list" id="utility-list" aria-live="polite"></div>
+          <div class="empty-state" id="empty-state">No electricity bills added yet.<br> Buy an electricity bill or choose Internet to buy a mobile data bundle.</div>
+
+          <div class="utility-form-wrap" id="utility-form-wrap" hidden>
+            <h3>Buy an electricity bill or internet data</h3>
+            <form id="utility-form">
+              <div class="field">
+                <label for="utility-type">What would you like to do?</label>
+                <select id="utility-type" name="type" required>
+                  <option value="">Choose an option</option>
+                  <option value="Electricity">Buy electricity bill</option>
+                  <option value="Internet">Buy internet data</option>
+                </select>
+              </div>
+              <div class="electricity-fields" id="electricity-fields" hidden>
+                <div class="field">
+                  <label for="utility-provider">DisCo</label>
+                  <select id="utility-provider" name="providerChoice" required disabled>
+                    <option value="">Choose a DisCo</option>
+                  </select>
+                  <p class="field-help" id="provider-help"></p>
+                </div>
+                <div class="field" id="custom-provider-field" hidden>
+                  <label for="custom-provider">Provider name</label>
+                  <input id="custom-provider" name="providerCustom" type="text" maxlength="80" placeholder="Enter provider name" disabled>
+                </div>
+                <div class="field">
+                  <label for="utility-account-number" id="account-number-label">Meter number</label>
+                  <input id="utility-account-number" name="accountNumber" type="text" autocomplete="off" maxlength="80" placeholder="Enter your electricity meter number" required disabled>
+                  <p class="field-help" id="account-number-help">Meter identification requires a live DisCo integration.</p>
+                </div>
+                <div class="field">
+                  <label for="utility-amount">Bill amount (₦)</label>
+                  <input id="utility-amount" name="amount" type="number" min="0.01" step="0.01" placeholder="e.g. 15000" required disabled>
+                </div>
+                <div class="field">
+                  <label for="utility-due-date">Next due date</label>
+                  <input id="utility-due-date" name="dueDate" type="date" required disabled>
+                </div>
+              </div>
+
+              <section class="data-purchase-fields" id="data-purchase-fields" aria-label="Mobile data bundle purchase" hidden>
+                <div class="data-section">
+                  <h4>1. Enter the recipient's mobile number</h4>
+                  <div class="phone-field">
+                    <label class="visually-hidden" for="data-phone">Nigerian mobile number</label>
+                    <span class="country-code" aria-hidden="true">+234</span>
+                    <input id="data-phone" name="phoneNumber" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="11" pattern="0[0-9]{10}" title="Enter an 11-digit Nigerian mobile number starting with 0." aria-describedby="phone-help" placeholder="0803 123 4567" required disabled>
+                  </div>
+                  <p class="field-help" id="phone-help">Enter 11 digits starting with 0. Change this number to buy for someone else.</p>
+                  <p class="network-status" id="network-status" role="status" aria-live="polite">Network will be estimated from the number prefix. You can change it below.</p>
+                </div>
+
+                <div class="data-section">
+                  <h4>2. Choose or confirm the network</h4>
+                  <div class="network-list" id="network-list" role="group" aria-label="Mobile network">
+                    <button class="network-button" type="button" data-network="MTN" aria-pressed="false" disabled>MTN</button>
+                    <button class="network-button" type="button" data-network="Airtel" aria-pressed="false" disabled>Airtel</button>
+                    <button class="network-button" type="button" data-network="Glo" aria-pressed="false" disabled>Glo</button>
+                    <button class="network-button" type="button" data-network="9mobile" aria-pressed="false" disabled>9mobile</button>
+                  </div>
+                </div>
+
+                <div class="data-section">
+                  <h4>3. Select a data bundle</h4>
+                  <div class="bundle-tabs" role="tablist" aria-label="Bundle duration">
+                    <button class="bundle-tab" type="button" role="tab" data-category="Hot deals" aria-selected="true" disabled>Hot deals</button>
+                    <button class="bundle-tab" type="button" role="tab" data-category="Daily" aria-selected="false" disabled>Daily</button>
+                    <button class="bundle-tab" type="button" role="tab" data-category="Weekly" aria-selected="false" disabled>Weekly</button>
+                    <button class="bundle-tab" type="button" role="tab" data-category="Monthly" aria-selected="false" disabled>Monthly</button>
+                  </div>
+                  <div class="bundle-grid" id="bundle-grid" aria-live="polite">
+                    <p class="bundle-empty">Enter a valid number and confirm the network to view sample bundles.</p>
+                  </div>
+                  <div class="data-summary">
+                    <span id="selected-bundle-summary">No bundle selected</span>
+                    <strong id="selected-bundle-price">₦0</strong>
+                  </div>
+                  <button class="submit-button" id="review-data-purchase" type="button" disabled>Review purchase</button>
+                </div>
+                <p class="data-demo-note">Sample bundles and prices are for demonstration only. Network detection is a prefix estimate. No account number is needed for mobile data.</p>
+              </section>
+
+              <div class="utility-form-actions">
+                <button class="submit-button" id="add-utility-account" type="submit" disabled>Buy electricity bill</button>
+                <button class="cancel-button" id="cancel-utility" type="button">Cancel</button>
+              </div>
+              <p class="notice" id="utility-notice" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+          </div>
+
+          <section class="admin-workspace" id="admin-workspace" aria-label="Admin dashboard" hidden>
+            <p class="admin-notice"><strong>Prototype admin workspace.</strong> Admin access is not authenticated, and the customer/payment data below exists only in this browser session. Do not use this page to manage real customers or payments.</p>
+            <nav class="admin-nav" aria-label="Admin sections">
+              <button type="button" data-admin-section="overview" aria-current="page">Overview</button>
+              <button type="button" data-admin-section="customers">Users</button>
+              <button type="button" data-admin-section="accounts">Utility accounts</button>
+              <button type="button" data-admin-section="payments">Transactions</button>
+              <button type="button" data-admin-section="providers">Providers</button>
+              <button type="button" data-admin-section="activity">Activity</button>
+              <button type="button" data-admin-section="settings">Settings & reports</button>
+            </nav>
+            <section class="admin-section" data-admin-panel="overview">
+              <h3 id="admin-display-heading">Meterly Admin · Platform overview</h3>
+              <div class="admin-metrics">
+                <div class="summary-card"><span class="summary-label">Total registered users</span><strong class="summary-value" id="admin-customer-count">0</strong></div>
+                <div class="summary-card"><span class="summary-label">Total utility accounts</span><strong class="summary-value" id="admin-account-count">0</strong></div>
+                <div class="summary-card"><span class="summary-label">Total bills tracked</span><strong class="summary-value" id="admin-bill-count">0</strong></div>
+                <div class="summary-card"><span class="summary-label">Total simulated transactions</span><strong class="summary-value" id="admin-payment-count">0</strong></div>
+                <div class="summary-card"><span class="summary-label">Simulated payment volume</span><strong class="summary-value" id="admin-payment-volume">₦0</strong></div>
+              </div>
+              <div class="admin-panel">
+                <h4>Recent activity</h4>
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Activity</th><th>Details</th><th>Time</th></tr></thead><tbody id="admin-recent-activity"></tbody></table></div>
+              </div>
+            </section>
+            <section class="admin-section" data-admin-panel="customers" hidden>
+              <h3>Registered users</h3>
+              <p class="dashboard-intro">Users created or signed in during this browser session. This demo does not connect to a central user service.</p>
+              <div class="admin-panel">
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Email</th><th>Session status</th><th>Accounts</th><th>Action</th></tr></thead><tbody id="admin-customers"></tbody></table></div>
+                <p class="admin-status" id="admin-user-status" role="status" aria-live="polite"></p>
+              </div>
+            </section>
+            <section class="admin-section" data-admin-panel="accounts" hidden>
+              <h3>Utility accounts</h3>
+              <div class="admin-toolbar">
+                <input id="admin-account-search" type="search" aria-label="Search utility accounts" placeholder="Search provider or account number">
+                <select id="admin-account-filter" aria-label="Filter by utility type">
+                  <option value="">All utility types</option><option value="Electricity">Electricity</option><option value="Internet">Internet</option>
+                </select>
+              </div>
+              <div class="admin-panel">
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Type</th><th>Provider</th><th>Account</th><th>Amount</th><th>Due</th><th>Reminder</th><th>Actions</th></tr></thead><tbody id="admin-accounts"></tbody></table></div>
+              </div>
+            </section>
+            <section class="admin-section" data-admin-panel="payments" hidden>
+              <h3>Simulated transactions</h3>
+              <div class="admin-toolbar">
+                <input id="admin-payment-search" type="search" aria-label="Search payments" placeholder="Search provider or payment method">
+                <select id="admin-payment-filter" aria-label="Filter payments by method">
+                  <option value="">All methods</option><option value="Card">Card</option><option value="Bank transfer">Bank transfer</option>
+                </select>
+              </div>
+              <div class="admin-panel">
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Reference</th><th>Service</th><th>Provider</th><th>Method</th><th>Amount</th><th>Status</th><th>Date</th><th>Receipt</th></tr></thead><tbody id="admin-payments"></tbody></table></div>
+              </div>
+            </section>
+            <section class="admin-section" data-admin-panel="providers" hidden>
+              <h3>Manage utility providers</h3>
+              <p class="dashboard-intro">Manage the electricity providers available in the utility purchase form.</p>
+              <div class="admin-panel">
+                <form class="provider-form" id="provider-form">
+                  <div class="field"><label for="provider-code">Provider code</label><input id="provider-code" name="code" maxlength="12" placeholder="e.g. NEWDC" required></div>
+                  <div class="field"><label for="provider-label">Provider display name</label><input id="provider-label" name="label" maxlength="60" placeholder="e.g. New Disco (Region)" required></div>
+                  <button class="add-utility-button" type="submit">Add provider</button>
+                </form>
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Display name</th><th>Status</th><th>Actions</th></tr></thead><tbody id="admin-providers"></tbody></table></div>
+                <p class="admin-status" id="admin-provider-status" role="status" aria-live="polite"></p>
+              </div>
+            </section>
+            <section class="admin-section" data-admin-panel="activity" hidden>
+              <h3>Admin activity log</h3>
+              <div class="admin-panel">
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Activity</th><th>Details</th><th>Time</th></tr></thead><tbody id="admin-activity"></tbody></table></div>
+              </div>
+            </section>
+            <section class="admin-section" data-admin-panel="settings" hidden>
+              <h3>Settings & reports</h3>
+              <div class="admin-panel">
+                <h4>Demo workspace settings</h4>
+                <form class="admin-settings" id="admin-settings-form">
+                  <label for="admin-display-name">Admin display name<input id="admin-display-name" name="displayName" maxlength="60" value="Meterly Admin" required></label>
+                  <label for="admin-report-range">Report period
+                    <select id="admin-report-range" name="range"><option value="all">All session activity</option><option value="30">Last 30 days</option><option value="7">Last 7 days</option></select>
+                  </label>
+                  <button class="add-utility-button" type="submit">Save settings</button>
+                </form>
+                <p class="admin-status" id="admin-settings-status" role="status" aria-live="polite"></p>
+              </div>
+              <div class="admin-panel">
+                <h4>Export reports</h4>
+                <p class="dashboard-intro">Download successful demo payments or utility accounts as a CSV file.</p>
+                <div class="dashboard-actions admin-section-actions">
+                  <button class="add-utility-button secondary" id="export-payments" type="button">Export payments CSV</button>
+                  <button class="add-utility-button secondary" id="export-accounts" type="button">Export accounts CSV</button>
+                </div>
+                <p class="admin-status" id="admin-export-status" role="status" aria-live="polite"></p>
+              </div>
+              <div class="admin-panel">
+                <h4>Session data</h4>
+                <p class="dashboard-intro">Clear utility accounts, demo payment history and activity from this page session.</p>
+                <button class="admin-action danger admin-clear-button" id="clear-admin-data" type="button">Clear session data</button>
+                <p class="admin-status" id="admin-data-status" role="status" aria-live="polite"></p>
+              </div>
+            </section>
+            <div class="dashboard-actions admin-section-actions">
+              <button class="add-utility-button secondary" id="return-to-customer-dashboard" type="button">Back to customer dashboard</button>
+            </div>
+          </section>
+
+          <p class="demo-note">Prototype only: sign-in and payments are not connected to live services. Browser reminder notifications require permission and this page to remain open; email and background push are not connected. Provider choices do not verify accounts or identify meters automatically. Utility details remain in this page session and are cleared when you sign out.</p>
+        </section>
+
+        <dialog class="receipt-dialog" id="digital-receipt-dialog" aria-labelledby="digital-receipt-title">
+          <div class="receipt-content">
+            <div class="receipt-watermark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M13.3 2.4 5.2 13h5.6l-.6 8.6 8.8-12h-5.5l.5-7.2Z" fill="currentColor"/>
+                <circle cx="18.7" cy="5.1" r="2" fill="#b9e2c7"/>
+              </svg>
+              <span>Meterly</span>
+            </div>
+            <div class="receipt-brand">
+              <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M13.3 2.4 5.2 13h5.6l-.6 8.6 8.8-12h-5.5l.5-7.2Z" fill="currentColor"/>
+                  <circle cx="18.7" cy="5.1" r="2" fill="#b9e2c7"/>
+                </svg>
+              </span>
+              <span class="brand-name">Meter<span>ly</span></span>
+              <span>· Demo receipt</span>
+            </div>
+            <h2 id="digital-receipt-title">Demo payment receipt</h2>
+            <p class="dashboard-intro">This receipt records a simulated transaction only. No money was moved.</p>
+            <div class="utility-details" id="digital-receipt-details"></div>
+            <div class="receipt-actions">
+              <button class="add-utility-button" id="download-digital-receipt-image" type="button">Download image (PNG)</button>
+              <button class="add-utility-button secondary" id="print-digital-receipt" type="button">Print / Save as PDF</button>
+              <button class="cancel-button" id="close-digital-receipt" type="button">Close</button>
+            </div>
+            <p class="field-help">Save as PDF from your browser’s print dialog, or download a PNG image.</p>
+          </div>
+        </dialog>
+
+        <dialog class="payment-dialog" id="data-confirm-dialog" aria-labelledby="data-confirm-title">
+          <div class="payment-dialog-content">
+            <h2 id="data-confirm-title">Review and pay</h2>
+            <p>Confirm the data bundle and choose how you would like to pay.</p>
+            <div class="utility-details">
+              <div><span class="utility-detail-label">Mobile number</span><span class="utility-detail-value" id="confirm-data-phone"></span></div>
+              <div><span class="utility-detail-label">Network</span><span class="utility-detail-value" id="confirm-data-network"></span></div>
+              <div><span class="utility-detail-label">Bundle</span><span class="utility-detail-value" id="confirm-data-bundle"></span></div>
+              <div><span class="utility-detail-label">Price</span><span class="utility-detail-value" id="confirm-data-price"></span></div>
+            </div>
+            <form id="data-checkout-form">
+              <fieldset class="payment-method-options">
+                <legend>Payment method</legend>
+                <label class="payment-method-option"><input type="radio" name="data-payment-method" value="Card" required> Debit or credit card</label>
+                <label class="payment-method-option"><input type="radio" name="data-payment-method" value="Bank transfer" required> Bank transfer</label>
+              </fieldset>
+              <section class="checkout-stage" id="card-demo-stage" aria-label="Demo card payment" hidden>
+                <div class="demo-payment-card">
+                  <strong>Demo card checkout</strong>
+                  <p>Test card: <strong>•••• •••• •••• 4242</strong></p>
+                  <p>Expiry: 12/30 &nbsp; Security code: 123</p>
+                  <p class="field-help">Demo values only. Do not enter real card details or PINs.</p>
+                </div>
+              </section>
+              <section class="checkout-stage" id="bank-demo-stage" aria-label="Demo bank transfer" hidden>
+                <div class="transfer-instructions">
+                  <strong>Demo transfer instructions</strong>
+                  <p>Bank: Meterly Demo Bank (not a real bank)</p>
+                  <p>Account name: Meterly Test Account</p>
+                  <p>Account number: <strong>000 123 4567</strong> (demo only)</p>
+                  <p>Transfer exactly <strong id="demo-transfer-amount"></strong></p>
+                  <span class="transfer-reference" id="demo-transfer-reference"></span>
+                  <p class="field-help">No actual transfer is possible. Use the button below to simulate transfer confirmation.</p>
+                </div>
+              </section>
+              <section class="checkout-stage" id="data-payment-processing" role="status" aria-live="polite" hidden>
+                <div class="demo-receipt">
+                  <strong>Processing payment...</strong>
+                  <p>Please wait while we process your demo payment.</p>
+                </div>
+              </section>
+              <section class="demo-receipt" id="data-demo-receipt" aria-live="polite" hidden>
+                <div class="success-receipt-brand">
+                  <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M13.3 2.4 5.2 13h5.6l-.6 8.6 8.8-12h-5.5l.5-7.2Z" fill="currentColor"/><circle cx="18.7" cy="5.1" r="2" fill="#b9e2c7"/></svg>
+                  </span>
+                  <span class="brand-name">Meter<span>ly</span></span>
+                  <small>Demo receipt</small>
+                </div>
+                <strong>Payment Successful</strong>
+                <p id="data-receipt-message"></p>
+                <p id="data-receipt-reference"></p>
+                <p class="field-help">Returning to the dashboard in 5 seconds. Use the button below to go now.</p>
+              </section>
+              <p class="data-demo-note" id="data-checkout-note">This is a simulated checkout. No money will be moved, and no data bundle will be credited.</p>
+              <div class="payment-actions">
+                <button class="cancel-button" id="cancel-data-purchase" type="button">Back</button>
+                <button class="submit-button" id="data-checkout-submit" type="submit" disabled>Continue</button>
+                <button class="submit-button" id="data-checkout-done" type="button" hidden>Back to dashboard</button>
+              </div>
+            </form>
+          </div>
+        </dialog>
+
+        <dialog class="payment-dialog" id="payment-dialog" aria-labelledby="payment-title">
+          <div class="payment-dialog-content">
+            <h2 id="payment-title">Review and pay electricity bill</h2>
+            <p id="payment-intro">Confirm the electricity bill details and select a payment method.</p>
+            <div class="payment-summary">
+              <span id="payment-provider"></span>
+              <strong id="payment-amount"></strong>
+            </div>
+            <p class="field-help" id="payment-account"></p>
+            <form id="payment-form">
+              <fieldset class="payment-method-options" id="electricity-payment-options">
+                <legend>Payment method</legend>
+                <label class="payment-method-option"><input type="radio" name="method" value="Card" required> Debit or credit card</label>
+                <label class="payment-method-option"><input type="radio" name="method" value="Bank transfer" required> Bank transfer</label>
+              </fieldset>
+              <section class="checkout-stage" id="electricity-card-stage" aria-label="Demo card payment" hidden>
+                <div class="demo-payment-card">
+                  <strong>Demo card checkout</strong>
+                  <p>Test card: <strong>•••• •••• •••• 4242</strong></p>
+                  <p>Expiry: 12/30 &nbsp; Security code: 123</p>
+                  <p class="field-help">Demo values only. Do not enter real card details or PINs.</p>
+                </div>
+              </section>
+              <section class="checkout-stage" id="electricity-bank-stage" aria-label="Demo bank transfer" hidden>
+                <div class="transfer-instructions">
+                  <strong>Demo transfer instructions</strong>
+                  <p>Bank: Meterly Demo Bank (not a real bank)</p>
+                  <p>Account name: Meterly Test Account</p>
+                  <p>Account number: <strong>000 123 4567</strong> (demo only)</p>
+                  <p>Transfer exactly <strong id="electricity-transfer-amount"></strong></p>
+                  <span class="transfer-reference" id="electricity-transfer-reference"></span>
+                  <p class="field-help">No actual transfer is possible. Use the button below to simulate confirmation.</p>
+                </div>
+              </section>
+              <section class="checkout-stage" id="electricity-payment-processing" role="status" aria-live="polite" hidden>
+                <div class="demo-receipt">
+                  <strong>Processing payment...</strong>
+                  <p>Please wait while we process your demo payment.</p>
+                </div>
+              </section>
+              <section class="demo-receipt" id="electricity-demo-receipt" aria-live="polite" hidden>
+                <div class="success-receipt-brand">
+                  <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M13.3 2.4 5.2 13h5.6l-.6 8.6 8.8-12h-5.5l.5-7.2Z" fill="currentColor"/><circle cx="18.7" cy="5.1" r="2" fill="#b9e2c7"/></svg>
+                  </span>
+                  <span class="brand-name">Meter<span>ly</span></span>
+                  <small>Demo receipt</small>
+                </div>
+                <strong>Payment Successful</strong>
+                <p id="electricity-receipt-message"></p>
+                <p id="electricity-receipt-reference"></p>
+                <p class="field-help">Returning to the dashboard in 5 seconds. Use the button below to go now.</p>
+              </section>
+              <p class="data-demo-note" id="electricity-checkout-note">This is a simulated checkout. No money will be moved, and no electricity payment will be sent to the DisCo.</p>
+              <div class="payment-actions">
+                <button class="cancel-button" id="cancel-payment" type="button">Cancel</button>
+                <button class="submit-button" id="review-payment" type="submit" disabled>Continue</button>
+                <button class="submit-button" id="electricity-payment-done" type="button" hidden>Back to dashboard</button>
+              </div>
+            </form>
+          </div>
+        </dialog>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const panels = document.querySelectorAll(".form-panel");
+
+    document.querySelectorAll("[data-panel]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        const nextPanel = document.getElementById(link.dataset.panel);
+        if (!nextPanel) return;
+        panels.forEach((panel) => {
+          panel.hidden = panel !== nextPanel;
+          const notice = panel.querySelector(".notice");
+          if (notice) notice.textContent = "";
+        });
+        const firstField = nextPanel.querySelector("input");
+        if (firstField) firstField.focus();
+      });
+    });
+
+    document.querySelectorAll(".toggle-password").forEach((button) => {
+      button.addEventListener("click", () => {
+        const input = document.getElementById(button.getAttribute("aria-controls"));
+        const showing = input.type === "password";
+        input.type = showing ? "text" : "password";
+        button.textContent = showing ? "Hide" : "Show";
+        button.setAttribute("aria-label", showing ? "Hide password" : "Show password");
+      });
+    });
+
+    document.querySelectorAll("form").forEach((form) => {
+      if (["login-form", "signup-form", "utility-form", "payment-form", "data-checkout-form", "admin-settings-form", "provider-form", "usage-budget-form"].includes(form.id)) return;
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        form.querySelector(".notice").textContent = form.dataset.message;
+      });
+    });
+
+    const utilityFormWrap = document.getElementById("utility-form-wrap");
+    const utilityForm = document.getElementById("utility-form");
+    const utilityList = document.getElementById("utility-list");
+    const emptyState = document.getElementById("empty-state");
+    const dashboard = document.getElementById("dashboard");
+    const dashboardHome = document.getElementById("dashboard-home");
+    const adminWorkspace = document.getElementById("admin-workspace");
+    const dashboardTitleRow = document.querySelector(".dashboard-title-row");
+    const accountCount = document.getElementById("account-count");
+    const upcomingTotal = document.getElementById("upcoming-total");
+    const paymentDialog = document.getElementById("payment-dialog");
+    const receiptDialog = document.getElementById("digital-receipt-dialog");
+    const showUtilityFormButton = document.getElementById("show-utility-form");
+    const utilityType = document.getElementById("utility-type");
+    const providerSelect = document.getElementById("utility-provider");
+    const providerHelp = document.getElementById("provider-help");
+    const customProviderField = document.getElementById("custom-provider-field");
+    const customProviderInput = document.getElementById("custom-provider");
+    const accountNumberInput = document.getElementById("utility-account-number");
+    const accountNumberLabel = document.getElementById("account-number-label");
+    const accountNumberHelp = document.getElementById("account-number-help");
+    const electricityFields = document.getElementById("electricity-fields");
+    const dataPurchaseFields = document.getElementById("data-purchase-fields");
+    const addUtilityButton = document.getElementById("add-utility-account");
+    const dataPhone = document.getElementById("data-phone");
+    const networkStatus = document.getElementById("network-status");
+    const networkButtons = [...document.querySelectorAll(".network-button")];
+    const bundleTabs = [...document.querySelectorAll(".bundle-tab")];
+    const bundleGrid = document.getElementById("bundle-grid");
+    const reviewDataPurchase = document.getElementById("review-data-purchase");
+    const dataConfirmDialog = document.getElementById("data-confirm-dialog");
+    let selectedDataNetwork = "";
+    let selectedDataBundle = null;
+    let selectedBundleCategory = "Hot deals";
+    let electricityCheckoutStage = "method";
+    let checkoutStage = "method";
+    let dataPaymentTimeout = null;
+    let dataRedirectTimeout = null;
+    let electricityPaymentTimeout = null;
+    let electricityRedirectTimeout = null;
+    let activeUserEmail = "";
+    let pendingElectricityPayment = null;
+    let activeReceipt = null;
+    let reminderMessagesShown = 0;
+    const sentReminderNotifications = new Set();
+    let reminderNotificationTimer = null;
+    let usageBudget = 100000;
+    const issuedReceiptReferences = new Set();
+    const adminUsers = [];
+    const adminPayments = [];
+    const adminActivity = [];
+    const adminSettings = { displayName: "Meterly Admin", range: "all" };
+
+    function createUniqueReceiptReference(prefix) {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const randomPart = window.crypto && typeof window.crypto.randomUUID === "function"
+          ? window.crypto.randomUUID().replaceAll("-", "").slice(0, 12)
+          : Math.random().toString(36).slice(2, 14).toUpperCase();
+        const reference = `${prefix}-${Date.now().toString(36).toUpperCase()}-${randomPart}`;
+        if (!issuedReceiptReferences.has(reference) &&
+            !adminPayments.some((payment) => payment.reference === reference)) {
+          issuedReceiptReferences.add(reference);
+          return reference;
+        }
+      }
+      throw new Error("Could not generate a unique demo receipt reference.");
+    }
+
+    const mobileNetworkPrefixes = {
+      MTN: ["0703", "0706", "0803", "0806", "0810", "0813", "0814", "0816", "0903", "0906", "0913", "0916"],
+      Airtel: ["0701", "0708", "0802", "0808", "0812", "0901", "0902", "0907", "0912"],
+      Glo: ["0705", "0805", "0807", "0811", "0815", "0905", "0915"],
+      "9mobile": ["0809", "0817", "0818", "0908", "0909"]
+    };
+
+    const sampleDataBundles = {
+      "Hot deals": [
+        { size: "1.5 GB", validity: "2 days", price: 500 },
+        { size: "3 GB", validity: "7 days", price: 1000 }
+      ],
+      Daily: [
+        { size: "500 MB", validity: "1 day", price: 150 },
+        { size: "1 GB", validity: "1 day", price: 300 }
+      ],
+      Weekly: [
+        { size: "2 GB", validity: "7 days", price: 700 },
+        { size: "5 GB", validity: "7 days", price: 1500 }
+      ],
+      Monthly: [
+        { size: "3 GB", validity: "30 days", price: 1500 },
+        { size: "6 GB", validity: "30 days", price: 2500 },
+        { size: "10 GB", validity: "30 days", price: 4000 }
+      ]
+    };
+
+    const providerOptions = {
+      Electricity: [
+        ["AEDC", "AEDC (Abuja)"],
+        ["EKEDC", "EKEDC (Eko)"],
+        ["IKEDC", "IKEDC (Ikeja)"],
+        ["IBEDC", "IBEDC (Ibadan)"],
+        ["JED", "JED (Jos)"],
+        ["KAEDCO", "KAEDCO (Kaduna)"],
+        ["KEDCO", "KEDCO (Kano)"],
+        ["PHED", "PHED (Port Harcourt)"],
+        ["EEDC", "EEDC (Enugu)"]
+      ]
+    };
+    const adminProviders = providerOptions.Electricity.map(([code, label]) => ({ code, label, active: true }));
+
+    function updateUtilityFields() {
+      const type = utilityType.value;
+      const electricity = type === "Electricity";
+      const mobileData = type === "Internet";
+      refreshProviderSelect();
+      providerSelect.value = "";
+      customProviderInput.value = "";
+      customProviderInput.required = false;
+      customProviderField.hidden = true;
+
+      electricityFields.hidden = !electricity;
+      electricityFields.querySelectorAll("input, select").forEach((field) => { field.disabled = !electricity; });
+      dataPurchaseFields.hidden = !mobileData;
+      dataPhone.disabled = !mobileData;
+      providerHelp.textContent = "Choose your DisCo. Meter identification requires a live provider integration.";
+      accountNumberLabel.textContent = "Meter number";
+      accountNumberInput.placeholder = "Enter your electricity meter number";
+      accountNumberHelp.textContent = "Select a DisCo manually. Automatic meter identification is not available in this prototype.";
+      addUtilityButton.hidden = !electricity;
+      addUtilityButton.disabled = !electricity;
+      resetDataPurchase();
+    }
+
+    function refreshProviderSelect() {
+      const selectedValue = providerSelect.value;
+      const options = utilityType.value === "Electricity"
+        ? adminProviders.filter((provider) => provider.active).map(({ code, label }) => [code, label])
+        : providerOptions[utilityType.value] || [];
+      providerSelect.replaceChildren(new Option(options.length ? "Select a provider" : "No active providers", ""));
+      options.forEach(([value, label]) => providerSelect.add(new Option(label, value)));
+      providerSelect.add(new Option("Other / not listed", "Other"));
+      providerSelect.disabled = options.length === 0;
+      if (options.some(([value]) => value === selectedValue)) providerSelect.value = selectedValue;
+    }
+
+    utilityType.addEventListener("change", updateUtilityFields);
+
+    providerSelect.addEventListener("change", () => {
+      const needsCustomProvider = providerSelect.value === "Other";
+      customProviderField.hidden = !needsCustomProvider;
+      customProviderInput.required = needsCustomProvider;
+      if (needsCustomProvider) customProviderInput.focus();
+    });
+
+    function inferMobileNetwork(phoneNumber) {
+      const prefix = phoneNumber.slice(0, 4);
+      return Object.entries(mobileNetworkPrefixes).find(([, prefixes]) => prefixes.includes(prefix))?.[0] || "";
+    }
+
+    function updateNetworkSelection() {
+      const validNumber = /^0\d{10}$/.test(dataPhone.value);
+      networkButtons.forEach((button) => { button.disabled = !validNumber; });
+      bundleTabs.forEach((tab) => { tab.disabled = !validNumber || !selectedDataNetwork; });
+      reviewDataPurchase.disabled = !validNumber || !selectedDataNetwork || !selectedDataBundle;
+      networkButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.network === selectedDataNetwork));
+      });
+    }
+
+    function renderDataBundles() {
+      bundleTabs.forEach((tab) => {
+        tab.setAttribute("aria-selected", String(tab.dataset.category === selectedBundleCategory));
+      });
+      bundleGrid.replaceChildren();
+
+      if (!/^0\d{10}$/.test(dataPhone.value) || !selectedDataNetwork) {
+        const prompt = document.createElement("p");
+        prompt.className = "bundle-empty";
+        prompt.textContent = "Enter a valid number and confirm the network to view sample bundles.";
+        bundleGrid.append(prompt);
+        updateNetworkSelection();
+        return;
+      }
+
+      sampleDataBundles[selectedBundleCategory].forEach((bundle, index) => {
+        const option = document.createElement("button");
+        option.className = "bundle-option";
+        option.type = "button";
+        option.setAttribute("aria-pressed", String(selectedDataBundle === bundle));
+        const size = document.createElement("span");
+        size.className = "bundle-size";
+        size.textContent = bundle.size;
+        const price = document.createElement("span");
+        price.className = "bundle-price";
+        price.textContent = `${new Intl.NumberFormat("en-NG").format(bundle.price)} · ${bundle.validity}`;
+        option.append(size, price);
+        if (selectedBundleCategory === "Hot deals" && index === 0) {
+          const badge = document.createElement("span");
+          badge.className = "hot-deal";
+          badge.textContent = "HOT DEAL";
+          size.append(badge);
+        }
+        option.addEventListener("click", () => {
+          selectedDataBundle = bundle;
+          document.getElementById("selected-bundle-summary").textContent = `${bundle.size} · ${bundle.validity}`;
+          document.getElementById("selected-bundle-price").textContent = new Intl.NumberFormat("en-NG", {
+            style: "currency",
+            currency: "NGN",
+            maximumFractionDigits: 0
+          }).format(bundle.price);
+          renderDataBundles();
+        });
+        bundleGrid.append(option);
+      });
+      updateNetworkSelection();
+    }
+
+    function resetDataBundleSelection() {
+      selectedDataBundle = null;
+      document.getElementById("selected-bundle-summary").textContent = "No bundle selected";
+      document.getElementById("selected-bundle-price").textContent = "₦0";
+      renderDataBundles();
+    }
+
+    function resetDataPurchase() {
+      dataPhone.value = "";
+      selectedDataNetwork = "";
+      selectedBundleCategory = "Hot deals";
+      dataPhone.setAttribute("aria-invalid", "false");
+      networkStatus.dataset.state = "";
+      networkStatus.textContent = "Network will be estimated from the number prefix. You can change it below.";
+      resetDataBundleSelection();
+      if (dataConfirmDialog.open) dataConfirmDialog.close();
+      resetDataCheckout();
+    }
+
+    dataPhone.addEventListener("input", () => {
+      dataPhone.value = dataPhone.value.replace(/\D/g, "").slice(0, 11);
+      const validNumber = /^0\d{10}$/.test(dataPhone.value);
+      dataPhone.setAttribute("aria-invalid", String(dataPhone.value.length > 0 && !validNumber));
+      selectedDataNetwork = validNumber ? inferMobileNetwork(dataPhone.value) : "";
+
+      if (validNumber && selectedDataNetwork) {
+        networkStatus.dataset.state = "success";
+        networkStatus.textContent = `Network estimate: ${selectedDataNetwork}. Check the selection below; number portability can affect detection.`;
+      } else if (validNumber) {
+        networkStatus.dataset.state = "error";
+        networkStatus.textContent = "We couldn't estimate this network from the prefix. Select it manually below.";
+      } else {
+        networkStatus.dataset.state = dataPhone.value.length ? "error" : "";
+        networkStatus.textContent = dataPhone.value.length
+          ? `Enter ${11 - dataPhone.value.length} more digit${11 - dataPhone.value.length === 1 ? "" : "s"}.`
+          : "Network will be estimated from the number prefix. You can change it below.";
+      }
+
+      resetDataBundleSelection();
+    });
+
+    networkButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.disabled) return;
+        selectedDataNetwork = button.dataset.network;
+        networkStatus.dataset.state = "success";
+        networkStatus.textContent = `Selected ${selectedDataNetwork}. Confirm this is the recipient's network before choosing a bundle.`;
+        resetDataBundleSelection();
+      });
+    });
+
+    bundleTabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        if (tab.disabled) return;
+        selectedBundleCategory = tab.dataset.category;
+        resetDataBundleSelection();
+      });
+    });
+
+    reviewDataPurchase.addEventListener("click", () => {
+      if (!utilityForm.reportValidity() || !/^0\d{10}$/.test(dataPhone.value) || !selectedDataNetwork || !selectedDataBundle) return;
+      document.getElementById("confirm-data-phone").textContent = `+234 ${dataPhone.value.slice(1)}`;
+      document.getElementById("confirm-data-network").textContent = selectedDataNetwork;
+      document.getElementById("confirm-data-bundle").textContent = `${selectedDataBundle.size} · ${selectedDataBundle.validity}`;
+      document.getElementById("confirm-data-price").textContent = new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+        maximumFractionDigits: 0
+      }).format(selectedDataBundle.price);
+      resetDataCheckout();
+      dataConfirmDialog.showModal();
+    });
+
+    function resetDataCheckout() {
+      const checkoutForm = document.getElementById("data-checkout-form");
+      const submitButton = document.getElementById("data-checkout-submit");
+      checkoutForm.reset();
+      window.clearTimeout(dataPaymentTimeout);
+      window.clearTimeout(dataRedirectTimeout);
+      dataPaymentTimeout = null;
+      dataRedirectTimeout = null;
+      checkoutStage = "method";
+      document.querySelector(".payment-method-options").hidden = false;
+      document.getElementById("card-demo-stage").hidden = true;
+      document.getElementById("bank-demo-stage").hidden = true;
+      document.getElementById("data-payment-processing").hidden = true;
+      document.getElementById("data-demo-receipt").hidden = true;
+      document.getElementById("data-confirm-title").textContent = "Review and pay";
+      document.getElementById("data-checkout-note").hidden = false;
+      document.getElementById("cancel-data-purchase").hidden = false;
+      document.getElementById("cancel-data-purchase").textContent = "Back";
+      document.getElementById("data-checkout-done").hidden = true;
+      document.getElementById("data-checkout-done").textContent = "Back to dashboard";
+      document.getElementById("demo-transfer-reference").textContent = "";
+      document.getElementById("demo-transfer-amount").textContent = "";
+      submitButton.hidden = false;
+      submitButton.disabled = true;
+      submitButton.textContent = "Continue";
+      submitButton.type = "submit";
+    }
+
+    document.getElementById("data-checkout-form").addEventListener("change", (event) => {
+      if (event.target.name !== "data-payment-method") return;
+      const submitButton = document.getElementById("data-checkout-submit");
+      submitButton.disabled = false;
+      submitButton.textContent = "Continue";
+    });
+
+    document.getElementById("data-checkout-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!event.currentTarget.reportValidity()) return;
+      const submitButton = document.getElementById("data-checkout-submit");
+      const method = new FormData(event.currentTarget).get("data-payment-method");
+
+      if (checkoutStage === "method") {
+        document.querySelector(".payment-method-options").hidden = true;
+        document.getElementById("data-checkout-note").hidden = true;
+        document.getElementById("cancel-data-purchase").textContent = "Change method";
+        if (method === "Card") {
+          checkoutStage = "card";
+          document.getElementById("card-demo-stage").hidden = false;
+          submitButton.textContent = `Pay ${document.getElementById("confirm-data-price").textContent} (demo)`;
+        } else {
+          checkoutStage = "bank";
+          document.getElementById("bank-demo-stage").hidden = false;
+          document.getElementById("demo-transfer-amount").textContent = document.getElementById("confirm-data-price").textContent;
+          document.getElementById("demo-transfer-reference").textContent = `Reference: MTR-${Date.now().toString().slice(-8)}`;
+          submitButton.textContent = "I've made the demo transfer";
+        }
+        return;
+      }
+
+      checkoutStage = "processing";
+      document.getElementById("card-demo-stage").hidden = true;
+      document.getElementById("bank-demo-stage").hidden = true;
+      document.getElementById("data-payment-processing").hidden = false;
+      document.getElementById("cancel-data-purchase").hidden = true;
+      submitButton.hidden = true;
+      dataPaymentTimeout = window.setTimeout(() => {
+        dataPaymentTimeout = null;
+        completeDemoDataPayment(method);
+      }, 700);
+    });
+
+    function completeDemoDataPayment(method) {
+      checkoutStage = "receipt";
+      document.getElementById("card-demo-stage").hidden = true;
+      document.getElementById("bank-demo-stage").hidden = true;
+      document.getElementById("data-payment-processing").hidden = true;
+      document.querySelector(".payment-method-options").hidden = true;
+      document.getElementById("data-checkout-note").hidden = true;
+      document.getElementById("data-demo-receipt").hidden = false;
+      document.getElementById("data-receipt-message").textContent =
+        `Your ${method.toLowerCase()} demo payment was successful for ${document.getElementById("confirm-data-phone").textContent}. This is not a real payment, and the data was not credited.`;
+      const reference = createUniqueReceiptReference("MTR");
+      const createdAt = new Date();
+      const validityDays = Number(selectedDataBundle.validity.match(/\d+/)?.[0]);
+      const expiresAt = new Date(createdAt);
+      expiresAt.setDate(expiresAt.getDate() + validityDays);
+      document.getElementById("data-receipt-reference").textContent = `Demo receipt · ${reference}`;
+      adminPayments.push({
+        reference,
+        type: "Internet data",
+        provider: document.getElementById("confirm-data-network").textContent,
+        description: document.getElementById("confirm-data-bundle").textContent,
+        accountNumber: document.getElementById("confirm-data-phone").textContent,
+        method,
+        amount: selectedDataBundle.price,
+        status: "Successful (demo)",
+        customer: activeUserEmail,
+        createdAt: createdAt.toISOString(),
+        expiresAt: expiresAt.toISOString(),
+        reminderEnabled: true
+      });
+      recordAdminActivity("Demo payment successful", `${reference} · Internet · ${method}`);
+      renderCustomerFeatures();
+      document.getElementById("cancel-data-purchase").hidden = true;
+      document.getElementById("data-checkout-submit").hidden = true;
+      document.getElementById("data-confirm-title").textContent = "Payment Successful";
+      document.getElementById("data-checkout-done").hidden = false;
+      dataRedirectTimeout = window.setTimeout(() => {
+        dataRedirectTimeout = null;
+        returnToDashboard(dataConfirmDialog);
+      }, 5000);
+    }
+
+    document.getElementById("data-checkout-done").addEventListener("click", () => {
+      window.clearTimeout(dataRedirectTimeout);
+      dataRedirectTimeout = null;
+      returnToDashboard(dataConfirmDialog);
+    });
+
+    document.getElementById("cancel-data-purchase").addEventListener("click", () => {
+      if (checkoutStage === "method") {
+        dataConfirmDialog.close();
+      } else {
+        resetDataCheckout();
+      }
+    });
+
+    dataConfirmDialog.addEventListener("close", resetDataCheckout);
+
+    function showDashboard() {
+      panels.forEach((panel) => { panel.hidden = true; });
+      dashboard.hidden = false;
+      document.querySelector(".mobile-brand").hidden = true;
+      document.querySelector(".form-side").scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+
+    function registerSessionUser(email, source) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!normalizedEmail) return;
+      let user = adminUsers.find((entry) => entry.email === normalizedEmail);
+      if (!user) {
+        user = { email: normalizedEmail, source, createdAt: new Date().toISOString() };
+        adminUsers.push(user);
+      }
+      activeUserEmail = normalizedEmail;
+    }
+
+    function returnToDashboard(dialog) {
+      setUtilityFormOpen(false);
+      if (dialog.open) dialog.close();
+      showDashboard();
+      showUtilityFormButton.focus();
+    }
+
+    function showLogin() {
+      adminWorkspace.hidden = true;
+      dashboardHome.hidden = false;
+      dashboardTitleRow.hidden = false;
+      dashboard.hidden = true;
+      document.querySelector(".mobile-brand").hidden = false;
+      panels.forEach((panel) => { panel.hidden = panel.id !== "login-panel"; });
+      utilityList.replaceChildren();
+      adminPayments.length = 0;
+      adminActivity.length = 0;
+      sentReminderNotifications.clear();
+      activeUserEmail = "";
+      pendingElectricityPayment = null;
+      usageBudget = 100000;
+      updateDashboardSummary();
+      utilityForm.reset();
+      updateUtilityFields();
+      setUtilityFormOpen(false);
+      document.getElementById("login-password").value = "";
+      document.getElementById("signup-password").value = "";
+      document.getElementById("login-email").focus();
+    }
+
+    document.getElementById("login-panel").querySelector("form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (event.currentTarget.reportValidity()) {
+        registerSessionUser(document.getElementById("login-email").value, "Signed in (demo)");
+        showDashboard();
+      }
+    });
+
+    document.getElementById("signup-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!event.currentTarget.reportValidity()) return;
+      registerSessionUser(document.getElementById("signup-email").value, "Registered");
+      document.getElementById("signup-password").value = "";
+      showDashboard();
+      document.getElementById("show-utility-form").focus();
+    });
+
+    function setUtilityFormOpen(open) {
+      utilityFormWrap.hidden = !open;
+      showUtilityFormButton.textContent = open ? "Close form" : "+ Add utility";
+      showUtilityFormButton.setAttribute("aria-expanded", String(open));
+      if (open) document.getElementById("utility-type").focus();
+    }
+
+    showUtilityFormButton.setAttribute("aria-controls", "utility-form-wrap");
+    showUtilityFormButton.setAttribute("aria-expanded", "false");
+    showUtilityFormButton.addEventListener("click", () => {
+      const open = utilityFormWrap.hidden;
+      if (!open) {
+        utilityForm.reset();
+        updateUtilityFields();
+        document.getElementById("utility-notice").textContent = "";
+      }
+      setUtilityFormOpen(open);
+    });
+
+    document.getElementById("cancel-utility").addEventListener("click", () => {
+      utilityForm.reset();
+      updateUtilityFields();
+      setUtilityFormOpen(false);
+      document.getElementById("utility-notice").textContent = "";
+    });
+
+    function addDetail(container, label, value) {
+      const detail = document.createElement("div");
+      const detailLabel = document.createElement("span");
+      const detailValue = document.createElement("span");
+      detailLabel.className = "utility-detail-label";
+      detailLabel.textContent = label;
+      detailValue.className = "utility-detail-value";
+      detailValue.textContent = value;
+      detail.append(detailLabel, detailValue);
+      container.append(detail);
+    }
+
+    function getReminderStatus(dueDate) {
+      const [year, month, day] = dueDate.split("-").map(Number);
+      const today = new Date();
+      const todayValue = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+      const dueDateValue = Date.UTC(year, month - 1, day);
+      const daysUntilDue = Math.round((dueDateValue - todayValue) / 86400000);
+
+      if (daysUntilDue < 0) {
+        const overdueDays = Math.abs(daysUntilDue);
+        return {
+          text: `OVERDUE by ${overdueDays} ${overdueDays === 1 ? "day" : "days"}`,
+          className: "is-overdue"
+        };
+      }
+      if (daysUntilDue === 0) {
+        return { text: "DUE TODAY", className: "is-due-today" };
+      }
+
+      return {
+        text: `Due ${new Date(year, month - 1, day).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        })}`,
+        className: ""
+      };
+    }
+
+    function getNextMonthlyDueDate(dueDate) {
+      const [year, month, day] = dueDate.split("-").map(Number);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let nextMonth = new Date(year, month, 1);
+      let nextDueDate;
+
+      do {
+        const lastDayOfMonth = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate();
+        nextDueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), Math.min(day, lastDayOfMonth));
+        if (nextDueDate <= today) nextMonth.setMonth(nextMonth.getMonth() + 1);
+      } while (nextDueDate <= today);
+
+      return `${nextDueDate.getFullYear()}-${String(nextDueDate.getMonth() + 1).padStart(2, "0")}-${String(nextDueDate.getDate()).padStart(2, "0")}`;
+    }
+
+    function advanceUtilityDueDate(utilityId) {
+      const card = [...utilityList.querySelectorAll(".utility-card")]
+        .find((utilityCard) => utilityCard.dataset.utilityId === utilityId);
+      if (!card) return null;
+
+      const nextDueDate = getNextMonthlyDueDate(card.dataset.dueDate);
+      card.dataset.dueDate = nextDueDate;
+      const reminder = card.querySelector(".utility-reminder");
+      const reminderStatus = getReminderStatus(nextDueDate);
+      reminder.className = `utility-reminder ${reminderStatus.className}`.trim();
+      reminder.querySelector("span").textContent = reminderStatus.text;
+      card.querySelectorAll(".utility-detail-value")[3].textContent =
+        new Date(`${nextDueDate}T00:00:00`).toLocaleDateString("en-NG", {
+          day: "numeric",
+          month: "short",
+          year: "numeric"
+        });
+      return nextDueDate;
+    }
+
+    function renderUtility(data) {
+      const card = document.createElement("article");
+      card.className = "utility-card";
+      card.dataset.amount = String(Number(data.amount));
+      card.dataset.utilityId = `utility-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      card.dataset.type = data.type;
+      card.dataset.provider = data.provider;
+      card.dataset.accountNumber = data.accountNumber;
+      card.dataset.dueDate = data.dueDate;
+      card.dataset.customer = activeUserEmail;
+
+      const top = document.createElement("div");
+      top.className = "utility-card-top";
+      const kind = document.createElement("span");
+      kind.className = "utility-kind";
+      kind.textContent = data.type;
+      const remove = document.createElement("button");
+      remove.className = "remove-utility";
+      remove.type = "button";
+      remove.textContent = "Remove";
+      remove.setAttribute("aria-label", `Remove ${data.type} account from ${data.provider}`);
+      remove.addEventListener("click", () => {
+        recordAdminActivity("Utility account removed", `${data.provider} · ${data.accountNumber}`);
+        card.remove();
+        updateDashboardSummary();
+      });
+      top.append(kind, remove);
+
+      const reminderStatus = getReminderStatus(data.dueDate);
+      const reminderLine = document.createElement("div");
+      reminderLine.className = `utility-reminder ${reminderStatus.className}`.trim();
+      reminderLine.setAttribute("role", "status");
+      const reminderName = document.createElement("strong");
+      reminderName.textContent = `${data.provider} Bill - `;
+      const reminderText = document.createElement("span");
+      reminderText.textContent = reminderStatus.text;
+      reminderLine.append(reminderName, reminderText);
+
+      const details = document.createElement("div");
+      details.className = "utility-details";
+      addDetail(details, "Provider", data.provider);
+      addDetail(details, data.type === "Electricity" ? "Meter number" : "Account number", data.accountNumber);
+      addDetail(details, "Bill amount", new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+        maximumFractionDigits: 2
+      }).format(Number(data.amount)));
+      addDetail(details, "Next due date", new Date(`${data.dueDate}T00:00:00`).toLocaleDateString("en-NG", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      }));
+
+      const actions = document.createElement("div");
+      actions.className = "utility-actions";
+
+      const pay = document.createElement("button");
+      pay.className = "utility-action primary";
+      pay.type = "button";
+      pay.textContent = "Pay bill";
+      pay.addEventListener("click", () => {
+        document.getElementById("payment-provider").textContent = `${data.provider} · ${data.type}`;
+        document.getElementById("payment-amount").textContent = new Intl.NumberFormat("en-NG", {
+          style: "currency",
+          currency: "NGN",
+          maximumFractionDigits: 2
+        }).format(Number(card.dataset.amount));
+        document.getElementById("payment-account").textContent = `Meter number: ${card.dataset.accountNumber}`;
+        document.getElementById("payment-intro").textContent = "Confirm the electricity bill details and select a payment method.";
+        resetElectricityCheckout();
+        pendingElectricityPayment = {
+          type: card.dataset.type,
+          provider: card.dataset.provider,
+          amount: Number(card.dataset.amount),
+          accountNumber: card.dataset.accountNumber,
+          utilityId: card.dataset.utilityId
+        };
+        paymentDialog.showModal();
+      });
+
+      const reminder = document.createElement("button");
+      reminder.className = "utility-action";
+      reminder.type = "button";
+      reminder.setAttribute("aria-pressed", "true");
+      reminder.textContent = "Reminder on";
+      reminder.addEventListener("click", () => {
+        const enabled = reminder.getAttribute("aria-pressed") !== "true";
+        reminder.setAttribute("aria-pressed", String(enabled));
+        reminder.textContent = enabled ? "Reminder on" : "Reminder off";
+        reminderLine.hidden = !enabled;
+        renderCustomerFeatures();
+      });
+
+      actions.append(pay, reminder);
+      card.append(top, reminderLine, details, actions);
+      utilityList.append(card);
+      recordAdminActivity("Utility account added", `${data.provider} · ${data.accountNumber}`);
+      updateDashboardSummary();
+    }
+
+    function updateDashboardSummary() {
+      const cards = [...utilityList.querySelectorAll(".utility-card")];
+      const total = cards.reduce((sum, card) => sum + Number(card.dataset.amount), 0);
+      accountCount.textContent = String(cards.length);
+      upcomingTotal.textContent = new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+        maximumFractionDigits: 0
+      }).format(total);
+      emptyState.hidden = cards.length > 0;
+      renderCustomerFeatures();
+      if (!adminWorkspace.hidden) renderAdminDashboard();
+    }
+
+    document.getElementById("track-bills-button").addEventListener("click", () => {
+      const utilityCards = utilityList.querySelectorAll(".utility-card");
+      utilityList.scrollIntoView({ block: "start", behavior: "smooth" });
+      if (!utilityCards.length && utilityFormWrap.hidden) showUtilityFormButton.click();
+    });
+
+    document.getElementById("toggle-all-reminders").addEventListener("click", () => {
+      const cards = [...utilityList.querySelectorAll(".utility-card")];
+      const internetPayments = adminPayments.filter((payment) => payment.type === "Internet data");
+      const reminderTargets = [
+        ...cards.map((card) => card.querySelector(".utility-actions .utility-action[aria-pressed]").getAttribute("aria-pressed") === "true"),
+        ...internetPayments.map((payment) => payment.reminderEnabled !== false)
+      ];
+      const allEnabled = reminderTargets.length > 0 && reminderTargets.every(Boolean);
+      const enabled = !allEnabled;
+      cards.forEach((card) => {
+        const toggle = card.querySelector(".utility-actions .utility-action[aria-pressed]");
+        toggle.setAttribute("aria-pressed", String(enabled));
+        toggle.textContent = enabled ? "Reminder on" : "Reminder off";
+        card.querySelector(".utility-reminder").hidden = !enabled;
+      });
+      internetPayments.forEach((payment) => {
+        payment.reminderEnabled = enabled;
+      });
+      recordAdminActivity("Payment reminders updated", allEnabled ? "All reminders turned off" : "All reminders turned on");
+      renderCustomerFeatures();
+    });
+
+    document.getElementById("usage-budget-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!event.currentTarget.reportValidity()) return;
+      usageBudget = Number(new FormData(event.currentTarget).get("budget"));
+      document.getElementById("usage-budget-status").textContent = `Monthly budget set to ${formatAdminCurrency(usageBudget)}.`;
+      renderCustomerFeatures();
+    });
+
+    document.getElementById("export-analytics").addEventListener("click", () => {
+      const accounts = [...utilityList.querySelectorAll(".utility-card")];
+      const rows = [
+        ...accounts.map((card) => [
+          card.dataset.dueDate.slice(0, 7), card.dataset.type,
+          `${card.dataset.provider} estimated bill`, card.dataset.amount
+        ]),
+        ...adminPayments.filter((payment) =>
+          !payment.customer || payment.customer === activeUserEmail
+        ).map((payment) => [
+          getMonthKey(new Date(payment.createdAt)), payment.type,
+          `${payment.provider} · ${payment.description || payment.method} (demo purchase)`, payment.amount
+        ])
+      ];
+      downloadAdminCsv("meterly-usage-analytics.csv", ["Month", "Utility", "Estimate / purchase", "Amount (NGN)"], rows);
+      document.getElementById("usage-budget-status").textContent = `Estimated analytics CSV export started (${rows.length} bills and internet purchases).`;
+    });
+
+    document.getElementById("close-digital-receipt").addEventListener("click", () => receiptDialog.close());
+    document.getElementById("download-digital-receipt-image").addEventListener("click", () => {
+      if (activeReceipt) downloadDigitalReceiptImage(activeReceipt);
+    });
+    document.getElementById("print-digital-receipt").addEventListener("click", () => window.print());
+
+    function daysUntilDue(dueDate) {
+      const [year, month, day] = dueDate.split("-").map(Number);
+      const today = new Date();
+      const todayValue = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+      return Math.round((Date.UTC(year, month - 1, day) - todayValue) / 86400000);
+    }
+
+    function getInternetExpiryDate(payment) {
+      if (payment.expiresAt) {
+        const expiryDate = new Date(payment.expiresAt);
+        return Number.isNaN(expiryDate.getTime()) ? null : expiryDate;
+      }
+      const validityDays = String(payment.description || "").match(/\b(\d+)\s+days?\b/i);
+      const purchaseDate = new Date(payment.createdAt);
+      if (!validityDays || Number.isNaN(purchaseDate.getTime())) return null;
+      purchaseDate.setDate(purchaseDate.getDate() + Number(validityDays[1]));
+      return purchaseDate;
+    }
+
+    function getInternetExpiryStatus(payment) {
+      const expiryDate = getInternetExpiryDate(payment);
+      if (!expiryDate) return "Expiry date unavailable";
+      const dateKey = `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(2, "0")}-${String(expiryDate.getDate()).padStart(2, "0")}`;
+      const daysRemaining = daysUntilDue(dateKey);
+      if (daysRemaining < 0) return `Bundle expired ${Math.abs(daysRemaining)} ${Math.abs(daysRemaining) === 1 ? "day" : "days"} ago`;
+      if (daysRemaining === 0) return "Bundle expires today";
+      return `Bundle expires in ${daysRemaining} ${daysRemaining === 1 ? "day" : "days"} · ${expiryDate.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`;
+    }
+
+    function getMonthKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function getMonthlySpending(utilityCards, purchases) {
+      const byMonth = new Map();
+      const addSpending = (month, utility, amount) => {
+        if (!byMonth.has(month)) byMonth.set(month, new Map());
+        const byUtility = byMonth.get(month);
+        byUtility.set(utility, (byUtility.get(utility) || 0) + Number(amount || 0));
+      };
+
+      utilityCards.forEach((card) => {
+        const dueDate = new Date(`${card.dataset.dueDate}T00:00:00`);
+        if (!Number.isNaN(dueDate.getTime())) {
+          addSpending(getMonthKey(dueDate), card.dataset.type, card.dataset.amount);
+        }
+      });
+      purchases.forEach((payment) => {
+        const purchaseDate = new Date(payment.createdAt);
+        if (!Number.isNaN(purchaseDate.getTime())) {
+          addSpending(getMonthKey(purchaseDate), payment.type, payment.amount);
+        }
+      });
+      return byMonth;
+    }
+
+    function renderMonthlyAnalytics(monthlySpending, currentMonth) {
+      const currentMonthKey = getMonthKey(currentMonth);
+      const previousMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+      const previousMonthKey = getMonthKey(previousMonth);
+      const currentByUtility = monthlySpending.get(currentMonthKey) || new Map();
+      const previousByUtility = monthlySpending.get(previousMonthKey) || new Map();
+      const comparison = document.getElementById("analytics-monthly-comparison");
+      comparison.replaceChildren();
+
+      const utilities = [...new Set([...currentByUtility.keys(), ...previousByUtility.keys()])].sort();
+      if (!utilities.length) {
+        const empty = document.createElement("p");
+        empty.className = "feature-empty";
+        empty.textContent = "Add an estimated bill or complete a demo purchase to start comparing monthly spending.";
+        comparison.append(empty);
+      } else {
+        const table = document.createElement("table");
+        table.className = "analytics-month-table";
+        const head = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        ["Utility", currentMonth.toLocaleDateString("en-GB", { month: "short", year: "numeric" }), previousMonth.toLocaleDateString("en-GB", { month: "short", year: "numeric" }), "Change"].forEach((label) => {
+          const cell = document.createElement("th");
+          cell.textContent = label;
+          headerRow.append(cell);
+        });
+        head.append(headerRow);
+        table.append(head);
+        const body = document.createElement("tbody");
+        const rows = [...utilities.map((utility) => [
+          utility,
+          currentByUtility.get(utility) || 0,
+          previousByUtility.get(utility) || 0
+        ]), [
+          "Total",
+          [...currentByUtility.values()].reduce((sum, amount) => sum + amount, 0),
+          [...previousByUtility.values()].reduce((sum, amount) => sum + amount, 0)
+        ]];
+        rows.forEach(([utility, current, previous]) => {
+          const row = document.createElement("tr");
+          const change = current - previous;
+          [
+            utility,
+            formatAdminCurrency(current),
+            formatAdminCurrency(previous),
+            `${change > 0 ? "+" : ""}${formatAdminCurrency(change)}`
+          ].forEach((value) => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.append(cell);
+          });
+          body.append(row);
+        });
+        table.append(body);
+        comparison.append(table);
+      }
+
+      const trend = document.getElementById("analytics-monthly-trend");
+      trend.replaceChildren();
+      const months = Array.from({ length: 6 }, (_, index) =>
+        new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 5 + index, 1));
+      const monthTotals = months.map((month) => {
+        const monthValues = monthlySpending.get(getMonthKey(month));
+        return {
+          month,
+          total: monthValues ? [...monthValues.values()].reduce((sum, amount) => sum + amount, 0) : 0
+        };
+      });
+      const maxTotal = Math.max(...monthTotals.map(({ total }) => total), 0);
+      monthTotals.forEach(({ month, total }) => {
+        const item = document.createElement("div");
+        item.className = "analytics-trend-item";
+        const monthLabel = document.createElement("span");
+        monthLabel.textContent = month.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+        const bar = document.createElement("span");
+        bar.className = "analytics-trend-bar";
+        const fill = document.createElement("span");
+        fill.style.width = `${maxTotal > 0 ? (total / maxTotal) * 100 : 0}%`;
+        bar.append(fill);
+        const value = document.createElement("strong");
+        value.textContent = formatAdminCurrency(total);
+        item.append(monthLabel, bar, value);
+        trend.append(item);
+      });
+    }
+
+    function updateBrowserNotificationControl() {
+      const button = document.getElementById("enable-browser-notifications");
+      const status = document.getElementById("notification-status");
+      if (!("Notification" in window)) {
+        button.disabled = true;
+        status.textContent = "This browser does not support notifications.";
+      } else if (!window.isSecureContext) {
+        button.disabled = true;
+        status.textContent = "Browser notifications require a secure page (HTTPS or localhost).";
+      } else if (Notification.permission === "granted") {
+        button.disabled = true;
+        button.textContent = "Browser notifications enabled";
+        status.textContent = "Reminders will appear for bills and data bundles due today or tomorrow while this page is open.";
+      } else if (Notification.permission === "denied") {
+        button.disabled = true;
+        status.textContent = "Notifications are blocked by your browser. Allow them in browser site settings to enable reminders.";
+      } else {
+        button.disabled = false;
+        button.textContent = "Enable browser notifications";
+        status.textContent = "Notifications are sent only while this page is open; no email or background push service is connected.";
+      }
+    }
+
+    function checkBrowserReminders() {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      const sendReminder = (key, title, body) => {
+        if (sentReminderNotifications.has(key)) return;
+        try {
+          new Notification(title, { body, tag: key });
+          sentReminderNotifications.add(key);
+        } catch (error) {
+          document.getElementById("notification-status").textContent =
+            `The browser could not show a reminder notification: ${error.message}`;
+        }
+      };
+
+      [...utilityList.querySelectorAll(".utility-card")].forEach((card) => {
+        const reminder = card.querySelector(".utility-actions .utility-action[aria-pressed]");
+        if (reminder.getAttribute("aria-pressed") !== "true") return;
+        const daysRemaining = daysUntilDue(card.dataset.dueDate);
+        if (daysRemaining >= 0 && daysRemaining <= 1) {
+          sendReminder(
+            `${card.dataset.utilityId}:${card.dataset.dueDate}`,
+            "Utility bill due soon",
+            `${card.dataset.provider} ${card.dataset.type} bill is ${daysRemaining === 0 ? "due today" : "due tomorrow"}.`
+          );
+        }
+      });
+
+      adminPayments.filter((payment) =>
+        payment.type === "Internet data" && payment.reminderEnabled !== false &&
+        (!payment.customer || payment.customer === activeUserEmail)
+      ).forEach((payment) => {
+        const expiryDate = getInternetExpiryDate(payment);
+        if (!expiryDate) return;
+        const expiryKey = `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(2, "0")}-${String(expiryDate.getDate()).padStart(2, "0")}`;
+        const daysRemaining = daysUntilDue(expiryKey);
+        if (daysRemaining >= 0 && daysRemaining <= 1) {
+          sendReminder(
+            `${payment.reference}:${expiryKey}`,
+            "Data bundle expiring soon",
+            `${payment.provider} ${payment.description || "data bundle"} ${daysRemaining === 0 ? "expires today" : "expires tomorrow"}.`
+          );
+        }
+      });
+    }
+
+    document.getElementById("enable-browser-notifications").addEventListener("click", async () => {
+      const status = document.getElementById("notification-status");
+      try {
+        const permission = await Notification.requestPermission();
+        updateBrowserNotificationControl();
+        if (permission === "granted") {
+          if (!reminderNotificationTimer) {
+            reminderNotificationTimer = window.setInterval(checkBrowserReminders, 60000);
+          }
+          checkBrowserReminders();
+        }
+      } catch (error) {
+        status.textContent = `Could not request notification permission: ${error.message}`;
+      }
+    });
+
+    function createFeatureButton(label, action, className = "admin-action") {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = className;
+      button.textContent = label;
+      button.addEventListener("click", action);
+      return button;
+    }
+
+    function openDigitalReceipt(payment) {
+      activeReceipt = payment;
+      const details = document.getElementById("digital-receipt-details");
+      details.replaceChildren();
+      addDetail(details, "Demo receipt reference", payment.reference);
+      addDetail(details, "Service", payment.type);
+      addDetail(details, "Service provider", payment.provider);
+      if (payment.description) addDetail(details, "Bundle", payment.description);
+      if (payment.accountNumber) addDetail(details, "Account / phone", payment.accountNumber);
+      addDetail(details, "Payment method", payment.method);
+      addDetail(details, "Amount", formatAdminCurrency(payment.amount));
+      addDetail(details, "Transaction status", payment.status || "Successful (demo)");
+      addDetail(details, "Customer", payment.customer || "Demo session");
+      addDetail(details, "Payment date", new Date(payment.createdAt).toLocaleString());
+      receiptDialog.showModal();
+    }
+
+    function downloadDigitalReceiptImage(payment) {
+      const rows = [
+        ["Demo receipt reference", payment.reference],
+        ["Service", payment.type],
+        ["Service provider", payment.provider],
+        ...(payment.description ? [["Bundle", payment.description]] : []),
+        ...(payment.accountNumber ? [["Account / phone", payment.accountNumber]] : []),
+        ["Payment method", payment.method],
+        ["Amount", formatAdminCurrency(payment.amount)],
+        ["Transaction status", payment.status || "Successful (demo)"],
+        ["Customer", payment.customer || "Demo session"],
+        ["Payment date", new Date(payment.createdAt).toLocaleString()]
+      ];
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Your browser could not prepare the receipt image.");
+      const width = 1200;
+      const padding = 88;
+      const contentWidth = width - padding * 2;
+      const valueFont = "600 25px Segoe UI, Arial, sans-serif";
+      const wrappedRows = rows.map(([label, value]) => {
+        context.font = valueFont;
+        const words = String(value).split(/\s+/);
+        const lines = [];
+        let line = "";
+        words.forEach((word) => {
+          const nextLine = line ? `${line} ${word}` : word;
+          if (context.measureText(nextLine).width > contentWidth && line) {
+            lines.push(line);
+            line = word;
+          } else {
+            line = nextLine;
+          }
+        });
+        if (line) lines.push(line);
+        return { label, lines };
+      });
+      const height = 560 + wrappedRows.reduce((total, row) => total + 82 + Math.max(0, row.lines.length - 1) * 34, 0);
+      canvas.width = width;
+      canvas.height = height;
+      context.fillStyle = "#f3f6f2";
+      context.fillRect(0, 0, width, height);
+      context.fillStyle = "#ffffff";
+      context.fillRect(35, 35, width - 70, height - 70);
+
+      context.save();
+      context.translate(width / 2, height / 2);
+      context.rotate(-Math.PI / 8);
+      context.globalAlpha = 0.065;
+      context.fillStyle = "#2f7654";
+      context.font = "800 112px Segoe UI, Arial, sans-serif";
+      context.textAlign = "center";
+      context.fillText("Meterly", 0, 34);
+      context.restore();
+
+      context.textAlign = "left";
+      context.fillStyle = "#2f7654";
+      context.beginPath();
+      context.roundRect(padding, padding, 50, 50, 14);
+      context.fill();
+      context.fillStyle = "#ffffff";
+      context.font = "700 30px Segoe UI, Arial, sans-serif";
+      context.fillText("M", padding + 13, padding + 35);
+      context.fillStyle = "#18241f";
+      context.font = "700 42px Segoe UI, Arial, sans-serif";
+      context.fillText("Meterly", padding + 66, padding + 40);
+      context.fillStyle = "#2f7654";
+      context.font = "700 19px Segoe UI, Arial, sans-serif";
+      context.fillText("DEMO PAYMENT RECEIPT", padding, padding + 105);
+      context.fillStyle = "#18241f";
+      context.font = "700 38px Segoe UI, Arial, sans-serif";
+      context.fillText("Payment successful", padding, padding + 160);
+      context.fillStyle = "#72531c";
+      context.font = "20px Segoe UI, Arial, sans-serif";
+      context.fillText("Demo transaction only. No money was moved or utility service credited.", padding, padding + 202);
+
+      let y = padding + 265;
+      wrappedRows.forEach(({ label, lines }) => {
+        context.strokeStyle = "#e4e9e4";
+        context.beginPath();
+        context.moveTo(padding, y - 15);
+        context.lineTo(width - padding, y - 15);
+        context.stroke();
+        context.fillStyle = "#738078";
+        context.font = "20px Segoe UI, Arial, sans-serif";
+        context.fillText(label, padding, y + 16);
+        context.fillStyle = "#18241f";
+        context.font = valueFont;
+        lines.forEach((line, index) => context.fillText(line, padding, y + 51 + index * 34));
+        y += 82 + Math.max(0, lines.length - 1) * 34;
+      });
+      context.strokeStyle = "#e4e9e4";
+      context.beginPath();
+      context.moveTo(padding, y - 15);
+      context.lineTo(width - padding, y - 15);
+      context.stroke();
+      context.fillStyle = "#738078";
+      context.font = "18px Segoe UI, Arial, sans-serif";
+      context.fillText("Generated by Meterly · Smart utility management · Simulated transaction", padding, height - padding);
+
+      try {
+        const image = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = image;
+        link.download = `meterly-receipt-${payment.reference}.png`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+      } catch (error) {
+        window.alert("The browser could not create the receipt PNG. Try printing the receipt and saving it as a PDF.");
+      }
+    }
+
+    function renderCustomerFeatures() {
+      const utilityCards = [...utilityList.querySelectorAll(".utility-card")];
+      const billList = document.getElementById("bill-tracking-list");
+      const reminderList = document.getElementById("reminder-list");
+      const receiptsList = document.getElementById("digital-receipt-list");
+      if (!billList || !reminderList || !receiptsList) return;
+
+      const sortedCards = utilityCards.slice().sort((a, b) => a.dataset.dueDate.localeCompare(b.dataset.dueDate));
+      const dueSoon = sortedCards.filter((card) => daysUntilDue(card.dataset.dueDate) <= 7);
+      const reminderCards = sortedCards.filter((card) =>
+        card.querySelector(".utility-actions .utility-action[aria-pressed]").getAttribute("aria-pressed") === "true");
+      const internetPayments = adminPayments.filter((payment) =>
+        payment.type === "Internet data" && (!payment.customer || payment.customer === activeUserEmail));
+      const enabledInternetReminders = internetPayments.filter((payment) => payment.reminderEnabled !== false);
+      document.getElementById("tracked-bill-count").textContent = String(sortedCards.length);
+      document.getElementById("due-bill-count").textContent = String(dueSoon.length);
+      document.getElementById("enabled-reminder-count").textContent = String(reminderCards.length + enabledInternetReminders.length);
+
+      billList.replaceChildren();
+      dueSoon.slice(0, 4).forEach((card) => {
+        const item = document.createElement("li");
+        item.className = "feature-list-item";
+        const summary = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = `${card.dataset.provider} · ${card.dataset.type}`;
+        const status = document.createElement("span");
+        status.textContent = `${getReminderStatus(card.dataset.dueDate).text} · ${formatAdminCurrency(card.dataset.amount)}`;
+        summary.append(name, status);
+        const payButton = createFeatureButton("Pay", () => card.querySelector(".utility-action.primary").click());
+        item.append(summary, payButton);
+        billList.append(item);
+      });
+      document.getElementById("bill-tracking-empty").hidden = dueSoon.length > 0;
+
+      reminderList.replaceChildren();
+      sortedCards.forEach((card) => {
+        const item = document.createElement("li");
+        item.className = "feature-list-item";
+        const summary = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = `${card.dataset.provider} bill`;
+        const status = document.createElement("span");
+        status.textContent = getReminderStatus(card.dataset.dueDate).text;
+        summary.append(name, status);
+        const reminderButton = card.querySelector(".utility-actions .utility-action[aria-pressed]");
+        const toggle = createFeatureButton(reminderButton.textContent, () => reminderButton.click());
+        toggle.setAttribute("aria-pressed", reminderButton.getAttribute("aria-pressed"));
+        toggle.classList.toggle("feature-toggle", reminderButton.getAttribute("aria-pressed") === "true");
+        item.append(summary, toggle);
+        reminderList.append(item);
+      });
+      internetPayments.slice().reverse().forEach((payment) => {
+        const item = document.createElement("li");
+        item.className = "feature-list-item";
+        const summary = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = `${payment.provider} · ${payment.description || "Internet data bundle"}`;
+        const status = document.createElement("span");
+        status.textContent = getInternetExpiryStatus(payment);
+        summary.append(name, status);
+        const enabled = payment.reminderEnabled !== false;
+        const toggle = createFeatureButton(enabled ? "Reminder on" : "Reminder off", () => {
+          payment.reminderEnabled = payment.reminderEnabled === false;
+          recordAdminActivity("Internet expiry reminder updated", `${payment.provider} · ${payment.description || payment.reference} · ${payment.reminderEnabled ? "On" : "Off"}`);
+          renderCustomerFeatures();
+        });
+        toggle.setAttribute("aria-pressed", String(enabled));
+        toggle.classList.toggle("feature-toggle", enabled);
+        item.append(summary, toggle);
+        reminderList.append(item);
+      });
+      const reminderCount = sortedCards.length + internetPayments.length;
+      document.getElementById("reminder-empty").hidden = reminderCount > 0;
+      const allRemindersEnabled = reminderCount > 0 && reminderCards.length + enabledInternetReminders.length === reminderCount;
+      const toggleAll = document.getElementById("toggle-all-reminders");
+      toggleAll.disabled = reminderCount === 0;
+      toggleAll.setAttribute("aria-pressed", String(allRemindersEnabled));
+      toggleAll.textContent = allRemindersEnabled ? "Reminders on" : "Reminders off";
+      toggleAll.classList.toggle("feature-toggle", allRemindersEnabled);
+
+      const currentMonth = new Date();
+      const customerPayments = adminPayments.filter((payment) =>
+        !payment.customer || payment.customer === activeUserEmail);
+      const monthlySpending = getMonthlySpending(utilityCards, customerPayments);
+      const currentMonthKey = getMonthKey(currentMonth);
+      const currentByUtility = monthlySpending.get(currentMonthKey) || new Map();
+      const analyticsTotal = [...currentByUtility.values()].reduce((sum, amount) => sum + amount, 0);
+      const paidTotal = customerPayments.reduce((sum, payment) => {
+        const paymentDate = new Date(payment.createdAt);
+        return !Number.isNaN(paymentDate.getTime()) && getMonthKey(paymentDate) === currentMonthKey
+          ? sum + Number(payment.amount)
+          : sum;
+      }, 0);
+      document.getElementById("analytics-current-total").textContent = formatAdminCurrency(analyticsTotal);
+      document.getElementById("analytics-paid-total").textContent = formatAdminCurrency(paidTotal);
+      document.getElementById("analytics-budget-remaining").textContent = formatAdminCurrency(Math.max(0, usageBudget - analyticsTotal));
+      document.getElementById("usage-budget").value = String(usageBudget);
+      renderMonthlyAnalytics(monthlySpending, new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1));
+      const typeTotals = Object.fromEntries(currentByUtility);
+      const analytics = document.getElementById("analytics-breakdown");
+      analytics.replaceChildren();
+      const types = Object.entries(typeTotals);
+      if (!types.length) {
+        const empty = document.createElement("p");
+        empty.className = "feature-empty";
+        empty.textContent = "Add an estimated electricity bill or complete an electricity or internet demo purchase to see your spending breakdown.";
+        analytics.append(empty);
+      } else {
+        const colors = ["#2f7654", "#e0a43b", "#4778a8", "#a45d82", "#788642", "#7658a5"];
+        const total = types.reduce((sum, [, amount]) => sum + amount, 0);
+        const chartLayout = document.createElement("div");
+        chartLayout.className = "analytics-chart";
+        const chart = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        chart.setAttribute("class", "analytics-pie");
+        chart.setAttribute("viewBox", "0 0 200 200");
+        chart.setAttribute("role", "img");
+        chart.setAttribute("aria-label", "Estimated electricity bills and electricity or internet demo purchases by utility type");
+        const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+        title.textContent = "Estimated electricity bills and electricity or internet demo purchases by utility type";
+        chart.append(title);
+        const legend = document.createElement("ul");
+        legend.className = "analytics-legend";
+        let angle = -Math.PI / 2;
+        types.forEach(([type, amount], index) => {
+          const color = colors[index % colors.length];
+          const fraction = total > 0 ? amount / total : 0;
+          const nextAngle = angle + fraction * Math.PI * 2;
+          if (types.length === 1) {
+            const slice = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            slice.setAttribute("cx", "100");
+            slice.setAttribute("cy", "100");
+            slice.setAttribute("r", "94");
+            slice.setAttribute("fill", color);
+            chart.append(slice);
+          } else if (fraction > 0) {
+            const startX = 100 + 94 * Math.cos(angle);
+            const startY = 100 + 94 * Math.sin(angle);
+            const endX = 100 + 94 * Math.cos(nextAngle);
+            const endY = 100 + 94 * Math.sin(nextAngle);
+            const largeArc = fraction > 0.5 ? 1 : 0;
+            const slice = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            slice.setAttribute("d", `M 100 100 L ${startX} ${startY} A 94 94 0 ${largeArc} 1 ${endX} ${endY} Z`);
+            slice.setAttribute("fill", color);
+            chart.append(slice);
+          }
+          angle = nextAngle;
+          const item = document.createElement("li");
+          item.className = "analytics-legend-item";
+          const swatch = document.createElement("span");
+          swatch.className = "analytics-legend-swatch";
+          swatch.style.backgroundColor = color;
+          swatch.setAttribute("aria-hidden", "true");
+          const label = document.createElement("span");
+          label.textContent = `${type} · ${total > 0 ? Math.round(fraction * 100) : 0}%`;
+          const value = document.createElement("strong");
+          value.textContent = formatAdminCurrency(amount);
+          item.append(swatch, label, value);
+          legend.append(item);
+        });
+        chartLayout.append(chart, legend);
+        analytics.append(chartLayout);
+      }
+
+      receiptsList.replaceChildren();
+      const receipts = adminPayments.filter((payment) => !payment.customer || payment.customer === activeUserEmail).slice().reverse();
+      receipts.forEach((payment) => {
+        const item = document.createElement("li");
+        item.className = "feature-list-item";
+        const summary = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = `${payment.type} · ${formatAdminCurrency(payment.amount)}`;
+        const meta = document.createElement("span");
+        meta.textContent = `Demo receipt · ${payment.reference} · ${new Date(payment.createdAt).toLocaleDateString()}`;
+        summary.append(name, meta);
+        const actions = document.createElement("div");
+        actions.className = "feature-actions";
+        actions.append(
+          createFeatureButton("View", () => openDigitalReceipt(payment)),
+          createFeatureButton("Download PNG", () => downloadDigitalReceiptImage(payment)),
+          createFeatureButton("Save as PDF", () => {
+            openDigitalReceipt(payment);
+            window.print();
+          })
+        );
+        item.append(summary, actions);
+        receiptsList.append(item);
+      });
+      document.getElementById("digital-receipt-count").textContent = String(receipts.length);
+      document.getElementById("digital-receipts-empty").hidden = receipts.length > 0;
+      checkBrowserReminders();
+    }
+
+    function formatAdminCurrency(amount) {
+      return new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+        maximumFractionDigits: 2
+      }).format(Number(amount) || 0);
+    }
+
+    function addAdminCell(row, value) {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.append(cell);
+      return cell;
+    }
+
+    function addAdminEmptyRow(body, columnCount, message) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.className = "empty-row";
+      cell.colSpan = columnCount;
+      cell.textContent = message;
+      row.append(cell);
+      body.append(row);
+    }
+
+    function recordAdminActivity(action, details) {
+      adminActivity.push({ action, details, createdAt: new Date().toISOString() });
+      if (adminActivity.length > 100) adminActivity.shift();
+      if (!adminWorkspace.hidden) renderAdminDashboard();
+    }
+
+    function getAdminReportItems(items) {
+      if (adminSettings.range === "all") return items;
+      const cutoff = Date.now() - Number(adminSettings.range) * 86400000;
+      return items.filter((item) => new Date(item.createdAt).getTime() >= cutoff);
+    }
+
+    function renderAdminDashboard() {
+      const utilityCards = [...utilityList.querySelectorAll(".utility-card")];
+      document.getElementById("admin-display-heading").textContent =
+        `${adminSettings.displayName} · Platform overview`;
+      document.getElementById("admin-customer-count").textContent = String(adminUsers.length);
+      document.getElementById("admin-account-count").textContent = String(utilityCards.length);
+      document.getElementById("admin-bill-count").textContent = String(utilityCards.length);
+      document.getElementById("admin-payment-count").textContent = String(adminPayments.length);
+      document.getElementById("admin-payment-volume").textContent =
+        formatAdminCurrency(adminPayments.reduce((total, payment) => total + payment.amount, 0));
+
+      const customersBody = document.getElementById("admin-customers");
+      customersBody.replaceChildren();
+      adminUsers.forEach((user) => {
+        const row = document.createElement("tr");
+        addAdminCell(row, user.email);
+        addAdminCell(row, user.email === activeUserEmail ? "Active session" : user.source);
+        addAdminCell(row, String(utilityCards.filter((card) => card.dataset.customer === user.email).length));
+        const actionCell = document.createElement("td");
+        actionCell.append(createFeatureButton("View", () => {
+          document.getElementById("admin-user-status").textContent =
+            `${user.email} · ${user.source} · Added ${new Date(user.createdAt).toLocaleString()}.`;
+        }));
+        row.append(actionCell);
+        customersBody.append(row);
+      });
+      if (!adminUsers.length) addAdminEmptyRow(customersBody, 4, "No demo users have registered or signed in during this session.");
+
+      const providersBody = document.getElementById("admin-providers");
+      providersBody.replaceChildren();
+      adminProviders.forEach((provider) => {
+        const row = document.createElement("tr");
+        addAdminCell(row, provider.code);
+        const labelCell = document.createElement("td");
+        const labelInput = document.createElement("input");
+        labelInput.value = provider.label;
+        labelInput.maxLength = 60;
+        labelInput.setAttribute("aria-label", `Display name for ${provider.code}`);
+        labelCell.append(labelInput);
+        row.append(labelCell);
+        const stateCell = addAdminCell(row, provider.active ? "Active" : "Inactive");
+        stateCell.className = "provider-state";
+        const actionCell = document.createElement("td");
+        actionCell.append(createFeatureButton("Save name", () => {
+          const label = labelInput.value.trim();
+          if (!label) {
+            labelInput.reportValidity();
+            return;
+          }
+          provider.label = label;
+          refreshProviderSelect();
+          document.getElementById("admin-provider-status").textContent = `${provider.code} display name saved.`;
+          recordAdminActivity("Utility provider updated", `${provider.code} · ${label}`);
+          renderAdminDashboard();
+        }));
+        actionCell.append(createFeatureButton(provider.active ? "Deactivate" : "Activate", () => {
+          provider.active = !provider.active;
+          refreshProviderSelect();
+          document.getElementById("admin-provider-status").textContent =
+            `${provider.code} ${provider.active ? "activated" : "deactivated"}.`;
+          recordAdminActivity("Utility provider status changed", `${provider.code} · ${provider.active ? "Active" : "Inactive"}`);
+          renderAdminDashboard();
+        }));
+        actionCell.append(createFeatureButton("Remove", () => {
+          if (!window.confirm(`Remove ${provider.code} from the provider list?`)) return;
+          const providerIndex = adminProviders.indexOf(provider);
+          if (providerIndex !== -1) adminProviders.splice(providerIndex, 1);
+          refreshProviderSelect();
+          document.getElementById("admin-provider-status").textContent = `${provider.code} removed.`;
+          recordAdminActivity("Utility provider removed", provider.code);
+          renderAdminDashboard();
+        }, "admin-action danger"));
+        row.append(actionCell);
+        providersBody.append(row);
+      });
+      if (!adminProviders.length) addAdminEmptyRow(providersBody, 4, "No utility providers configured.");
+
+      const accountBody = document.getElementById("admin-accounts");
+      accountBody.replaceChildren();
+      const accountSearch = document.getElementById("admin-account-search").value.trim().toLowerCase();
+      const accountType = document.getElementById("admin-account-filter").value;
+      const matchingAccounts = utilityCards.filter((card) => {
+        const searchable = `${card.dataset.provider} ${card.dataset.accountNumber}`.toLowerCase();
+        return (!accountSearch || searchable.includes(accountSearch)) &&
+          (!accountType || card.dataset.type === accountType);
+      });
+      matchingAccounts.forEach((card) => {
+        const row = document.createElement("tr");
+        addAdminCell(row, card.dataset.type);
+        addAdminCell(row, card.dataset.provider);
+        addAdminCell(row, card.dataset.accountNumber);
+
+        const amountCell = document.createElement("td");
+        const amountInput = document.createElement("input");
+        amountInput.type = "number";
+        amountInput.min = "0.01";
+        amountInput.step = "0.01";
+        amountInput.required = true;
+        amountInput.value = card.dataset.amount;
+        amountInput.setAttribute("aria-label", `Bill amount for ${card.dataset.provider}`);
+        amountCell.append(amountInput);
+        row.append(amountCell);
+
+        const dueCell = document.createElement("td");
+        const dueInput = document.createElement("input");
+        dueInput.type = "date";
+        dueInput.required = true;
+        dueInput.value = card.dataset.dueDate;
+        dueInput.setAttribute("aria-label", `Due date for ${card.dataset.provider}`);
+        dueCell.append(dueInput);
+        row.append(dueCell);
+
+        const reminderCell = document.createElement("td");
+        const reminderSource = card.querySelector(".utility-actions .utility-action[aria-pressed]");
+        const reminderButton = document.createElement("button");
+        reminderButton.className = "admin-action";
+        reminderButton.type = "button";
+        reminderButton.setAttribute("aria-pressed", reminderSource.getAttribute("aria-pressed"));
+        reminderButton.textContent = reminderSource.getAttribute("aria-pressed") === "true" ? "On" : "Off";
+        reminderButton.addEventListener("click", () => {
+          reminderSource.click();
+          reminderButton.setAttribute("aria-pressed", reminderSource.getAttribute("aria-pressed"));
+          reminderButton.textContent = reminderSource.getAttribute("aria-pressed") === "true" ? "On" : "Off";
+          recordAdminActivity("Reminder setting updated", `${card.dataset.provider} · ${reminderButton.textContent}`);
+        });
+        reminderCell.append(reminderButton);
+        row.append(reminderCell);
+
+        const actionCell = document.createElement("td");
+        const saveButton = document.createElement("button");
+        saveButton.className = "admin-action";
+        saveButton.type = "button";
+        saveButton.textContent = "Save";
+        saveButton.addEventListener("click", () => {
+          if (!amountInput.reportValidity() || !dueInput.reportValidity()) return;
+          card.dataset.amount = String(Number(amountInput.value));
+          card.dataset.dueDate = dueInput.value;
+          const details = card.querySelectorAll(".utility-detail-value");
+          details[2].textContent = formatAdminCurrency(amountInput.value);
+          details[3].textContent = new Date(`${dueInput.value}T00:00:00`).toLocaleDateString("en-NG", {
+            day: "numeric", month: "short", year: "numeric"
+          });
+          const reminder = card.querySelector(".utility-reminder");
+          const status = getReminderStatus(dueInput.value);
+          reminder.className = `utility-reminder ${status.className}`.trim();
+          reminder.querySelector("span").textContent = status.text;
+          recordAdminActivity("Utility account updated", `${card.dataset.provider} · ${card.dataset.accountNumber}`);
+          updateDashboardSummary();
+          renderAdminDashboard();
+        });
+        const removeButton = document.createElement("button");
+        removeButton.className = "admin-action danger";
+        removeButton.type = "button";
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", () => {
+          if (!window.confirm(`Remove the ${card.dataset.provider} utility account?`)) return;
+          recordAdminActivity("Utility account removed", `${card.dataset.provider} · ${card.dataset.accountNumber}`);
+          card.remove();
+          updateDashboardSummary();
+          renderAdminDashboard();
+        });
+        actionCell.append(saveButton, removeButton);
+        row.append(actionCell);
+        accountBody.append(row);
+      });
+      if (!matchingAccounts.length) addAdminEmptyRow(accountBody, 7, "No matching utility accounts.");
+
+      const paymentSearch = document.getElementById("admin-payment-search").value.trim().toLowerCase();
+      const paymentMethod = document.getElementById("admin-payment-filter").value;
+      const paymentsBody = document.getElementById("admin-payments");
+      paymentsBody.replaceChildren();
+      const matchingPayments = getAdminReportItems(adminPayments).filter((payment) => {
+        const searchable = `${payment.provider} ${payment.method} ${payment.reference}`.toLowerCase();
+        return (!paymentSearch || searchable.includes(paymentSearch)) &&
+          (!paymentMethod || payment.method === paymentMethod);
+      }).slice().reverse();
+      matchingPayments.forEach((payment) => {
+        const row = document.createElement("tr");
+        addAdminCell(row, payment.reference);
+        addAdminCell(row, payment.type);
+        addAdminCell(row, payment.provider);
+        addAdminCell(row, payment.method);
+        addAdminCell(row, formatAdminCurrency(payment.amount));
+        addAdminCell(row, payment.status || "Successful (demo)");
+        addAdminCell(row, new Date(payment.createdAt).toLocaleString());
+        const receiptCell = document.createElement("td");
+        receiptCell.append(createFeatureButton("View receipt", () => openDigitalReceipt(payment)));
+        row.append(receiptCell);
+        paymentsBody.append(row);
+      });
+      if (!matchingPayments.length) addAdminEmptyRow(paymentsBody, 8, "No successful demo payments in this report period.");
+
+      const activityRows = getAdminReportItems(adminActivity).slice().reverse();
+      ["admin-recent-activity", "admin-activity"].forEach((id) => {
+        const body = document.getElementById(id);
+        body.replaceChildren();
+        activityRows.slice(0, id === "admin-recent-activity" ? 5 : activityRows.length).forEach((activity) => {
+          const row = document.createElement("tr");
+          addAdminCell(row, activity.action);
+          addAdminCell(row, activity.details);
+          addAdminCell(row, new Date(activity.createdAt).toLocaleString());
+          body.append(row);
+        });
+        if (!activityRows.length) addAdminEmptyRow(body, 3, "No activity recorded in this session.");
+      });
+    }
+
+    function downloadAdminCsv(filename, headers, rows) {
+      const escapeCsv = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+      const contents = [headers, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\r\n");
+      const url = URL.createObjectURL(new Blob([contents], { type: "text/csv;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function openAdminDashboard() {
+      showDashboard();
+      dashboardHome.hidden = true;
+      dashboardTitleRow.hidden = true;
+      adminWorkspace.hidden = false;
+      renderAdminDashboard();
+      recordAdminActivity("Admin dashboard opened", activeUserEmail || "Demo session");
+    }
+
+    document.getElementById("open-admin-dashboard").addEventListener("click", openAdminDashboard);
+    document.getElementById("open-admin-demo").addEventListener("click", openAdminDashboard);
+
+    document.getElementById("return-to-customer-dashboard").addEventListener("click", () => {
+      adminWorkspace.hidden = true;
+      dashboardTitleRow.hidden = false;
+      dashboardHome.hidden = false;
+    });
+
+    document.querySelectorAll("[data-admin-section]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-admin-section]").forEach((tab) => tab.removeAttribute("aria-current"));
+        button.setAttribute("aria-current", "page");
+        document.querySelectorAll("[data-admin-panel]").forEach((panel) => {
+          panel.hidden = panel.dataset.adminPanel !== button.dataset.adminSection;
+        });
+        renderAdminDashboard();
+      });
+    });
+
+    ["admin-account-search", "admin-account-filter", "admin-payment-search", "admin-payment-filter"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", renderAdminDashboard);
+      document.getElementById(id).addEventListener("change", renderAdminDashboard);
+    });
+
+    document.getElementById("admin-settings-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!event.currentTarget.reportValidity()) return;
+      const values = new FormData(event.currentTarget);
+      adminSettings.displayName = values.get("displayName").trim();
+      adminSettings.range = values.get("range");
+      document.getElementById("admin-settings-status").textContent = `Settings saved for ${adminSettings.displayName}.`;
+      recordAdminActivity("Admin settings updated", `Report period: ${adminSettings.range}`);
+      renderAdminDashboard();
+    });
+
+    document.getElementById("export-payments").addEventListener("click", () => {
+      const payments = getAdminReportItems(adminPayments);
+      downloadAdminCsv("meterly-demo-payments.csv",
+        ["Reference", "Service", "Provider", "Method", "Amount (NGN)", "Status", "Customer", "Date"],
+        payments.map((payment) => [
+          payment.reference, payment.type, payment.provider, payment.method, payment.amount,
+          "Successful (demo)", payment.customer, payment.createdAt
+        ]));
+      document.getElementById("admin-export-status").textContent = `Payment CSV export started (${payments.length} records).`;
+      recordAdminActivity("Payment report exported", `${payments.length} payment records`);
+    });
+
+    document.getElementById("export-accounts").addEventListener("click", () => {
+      const accounts = [...utilityList.querySelectorAll(".utility-card")];
+      downloadAdminCsv("meterly-demo-utility-accounts.csv",
+        ["Type", "Provider", "Account number", "Amount (NGN)", "Due date"],
+        accounts.map((card) => [
+          card.dataset.type, card.dataset.provider, card.dataset.accountNumber, card.dataset.amount, card.dataset.dueDate
+        ]));
+      document.getElementById("admin-export-status").textContent = `Utility account CSV export started (${accounts.length} records).`;
+      recordAdminActivity("Utility account report exported", `${accounts.length} account records`);
+    });
+
+    document.getElementById("provider-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!event.currentTarget.reportValidity()) return;
+      const values = new FormData(event.currentTarget);
+      const code = values.get("code").trim().toUpperCase();
+      const label = values.get("label").trim();
+      if (!/^[A-Z0-9-]{1,12}$/.test(code)) {
+        document.getElementById("admin-provider-status").textContent = "Use 1–12 letters, numbers, or hyphens for the provider code.";
+        document.getElementById("provider-code").focus();
+        return;
+      }
+      if (code === "OTHER") {
+        document.getElementById("admin-provider-status").textContent = "The code OTHER is reserved for custom provider entry.";
+        document.getElementById("provider-code").focus();
+        return;
+      }
+      if (adminProviders.some((provider) => provider.code.toLowerCase() === code.toLowerCase())) {
+        document.getElementById("admin-provider-status").textContent = `Provider code ${code} already exists.`;
+        document.getElementById("provider-code").focus();
+        return;
+      }
+      adminProviders.push({ code, label, active: true });
+      event.currentTarget.reset();
+      refreshProviderSelect();
+      document.getElementById("admin-provider-status").textContent = `${code} added and enabled for bill purchases.`;
+      recordAdminActivity("Utility provider added", `${code} · ${label}`);
+      renderAdminDashboard();
+    });
+
+    document.getElementById("clear-admin-data").addEventListener("click", () => {
+      if (!window.confirm("Clear all utility accounts and demo payment history for this page session?")) return;
+      utilityList.replaceChildren();
+      adminUsers.length = 0;
+      adminPayments.length = 0;
+      adminActivity.length = 0;
+      updateDashboardSummary();
+      document.getElementById("admin-data-status").textContent = "Session users, utility accounts, payments, and activity have been cleared.";
+      recordAdminActivity("Session data cleared", activeUserEmail || "Demo session");
+      renderAdminDashboard();
+    });
+
+    utilityForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!utilityForm.reportValidity()) return;
+      if (utilityType.value === "Internet") {
+        reviewDataPurchase.click();
+        return;
+      }
+      const data = Object.fromEntries(new FormData(utilityForm));
+      data.provider = data.providerChoice === "Other" ? data.providerCustom.trim() : data.providerChoice;
+      delete data.providerChoice;
+      delete data.providerCustom;
+      renderUtility(data);
+      utilityForm.reset();
+      updateUtilityFields();
+      setUtilityFormOpen(false);
+      document.getElementById("utility-notice").textContent = "";
+    });
+
+    function resetElectricityCheckout() {
+      window.clearTimeout(electricityPaymentTimeout);
+      window.clearTimeout(electricityRedirectTimeout);
+      electricityPaymentTimeout = null;
+      electricityRedirectTimeout = null;
+      electricityCheckoutStage = "method";
+      document.getElementById("payment-form").reset();
+      document.getElementById("electricity-payment-options").hidden = false;
+      document.getElementById("electricity-card-stage").hidden = true;
+      document.getElementById("electricity-bank-stage").hidden = true;
+      document.getElementById("electricity-payment-processing").hidden = true;
+      document.getElementById("electricity-demo-receipt").hidden = true;
+      document.getElementById("payment-title").textContent = "Review and pay electricity bill";
+      document.getElementById("electricity-checkout-note").hidden = false;
+      document.getElementById("electricity-transfer-amount").textContent = "";
+      document.getElementById("electricity-transfer-reference").textContent = "";
+      document.getElementById("electricity-receipt-message").textContent = "";
+      document.getElementById("electricity-receipt-reference").textContent = "";
+      document.getElementById("cancel-payment").hidden = false;
+      document.getElementById("cancel-payment").textContent = "Cancel";
+      document.getElementById("review-payment").hidden = false;
+      document.getElementById("review-payment").disabled = true;
+      document.getElementById("review-payment").textContent = "Continue";
+      document.getElementById("electricity-payment-done").hidden = true;
+      document.getElementById("electricity-payment-done").textContent = "Back to dashboard";
+    }
+
+    document.getElementById("payment-form").addEventListener("change", (event) => {
+      if (event.target.name !== "method") return;
+      document.getElementById("review-payment").disabled = false;
+    });
+
+    document.getElementById("payment-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!event.currentTarget.reportValidity()) return;
+      const method = new FormData(event.currentTarget).get("method");
+      const continueButton = document.getElementById("review-payment");
+
+      if (electricityCheckoutStage === "method") {
+        document.getElementById("electricity-payment-options").hidden = true;
+        document.getElementById("electricity-checkout-note").hidden = true;
+        document.getElementById("cancel-payment").textContent = "Change method";
+        if (method === "Card") {
+          electricityCheckoutStage = "card";
+          document.getElementById("electricity-card-stage").hidden = false;
+          continueButton.textContent = `Pay ${document.getElementById("payment-amount").textContent} (demo)`;
+        } else {
+          electricityCheckoutStage = "bank";
+          document.getElementById("electricity-bank-stage").hidden = false;
+          document.getElementById("electricity-transfer-amount").textContent = document.getElementById("payment-amount").textContent;
+          document.getElementById("electricity-transfer-reference").textContent = `Reference: ELE-${Date.now().toString().slice(-8)}`;
+          continueButton.textContent = "I've made the demo transfer";
+        }
+        return;
+      }
+
+      electricityCheckoutStage = "processing";
+      document.getElementById("electricity-card-stage").hidden = true;
+      document.getElementById("electricity-bank-stage").hidden = true;
+      document.getElementById("electricity-payment-processing").hidden = false;
+      document.getElementById("cancel-payment").hidden = true;
+      continueButton.hidden = true;
+      electricityPaymentTimeout = window.setTimeout(() => {
+        electricityPaymentTimeout = null;
+        completeElectricityDemoPayment(method);
+      }, 700);
+    });
+
+    function completeElectricityDemoPayment(method) {
+      electricityCheckoutStage = "receipt";
+      document.getElementById("electricity-card-stage").hidden = true;
+      document.getElementById("electricity-bank-stage").hidden = true;
+      document.getElementById("electricity-payment-processing").hidden = true;
+      document.getElementById("electricity-payment-options").hidden = true;
+      document.getElementById("electricity-checkout-note").hidden = true;
+      document.getElementById("electricity-demo-receipt").hidden = false;
+      const nextDueDate = advanceUtilityDueDate(pendingElectricityPayment?.utilityId);
+      const nextDueText = nextDueDate
+        ? new Date(`${nextDueDate}T00:00:00`).toLocaleDateString("en-NG", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        })
+        : "";
+      document.getElementById("electricity-receipt-message").textContent =
+        `Your ${method.toLowerCase()} demo payment was successful for ${document.getElementById("payment-provider").textContent}. This is not a real payment; the DisCo bill has not been paid.${nextDueText ? ` Your next reminder is set for ${nextDueText}.` : ""}`;
+      const cleanReference = createUniqueReceiptReference("ELE");
+      document.getElementById("electricity-receipt-reference").textContent = `Demo receipt · ${cleanReference}`;
+      adminPayments.push({
+        reference: cleanReference,
+        type: pendingElectricityPayment?.type || "Electricity",
+        provider: pendingElectricityPayment?.provider || document.getElementById("payment-provider").textContent,
+        description: "",
+        accountNumber: pendingElectricityPayment?.accountNumber || "",
+        method,
+        amount: pendingElectricityPayment?.amount || 0,
+        status: "Successful (demo)",
+        customer: activeUserEmail,
+        createdAt: new Date().toISOString()
+      });
+      recordAdminActivity("Demo payment successful", `${cleanReference} · Electricity · ${method}${nextDueDate ? ` · Next due ${nextDueDate}` : ""}`);
+      updateDashboardSummary();
+      document.getElementById("cancel-payment").hidden = true;
+      document.getElementById("review-payment").hidden = true;
+      document.getElementById("payment-title").textContent = "Payment Successful";
+      document.getElementById("electricity-payment-done").hidden = false;
+      electricityRedirectTimeout = window.setTimeout(() => {
+        electricityRedirectTimeout = null;
+        returnToDashboard(paymentDialog);
+      }, 5000);
+    }
+
+    document.getElementById("cancel-payment").addEventListener("click", () => {
+      if (electricityCheckoutStage === "method") {
+        paymentDialog.close();
+      } else {
+        electricityCheckoutStage = "method";
+        document.getElementById("electricity-card-stage").hidden = true;
+        document.getElementById("electricity-bank-stage").hidden = true;
+        document.getElementById("electricity-payment-options").hidden = false;
+        document.getElementById("electricity-checkout-note").hidden = false;
+        document.getElementById("cancel-payment").textContent = "Cancel";
+        document.getElementById("review-payment").textContent = "Continue";
+        document.getElementById("review-payment").disabled = false;
+      }
+    });
+
+    document.getElementById("electricity-payment-done").addEventListener("click", () => {
+      window.clearTimeout(electricityRedirectTimeout);
+      electricityRedirectTimeout = null;
+      returnToDashboard(paymentDialog);
+    });
+
+    paymentDialog.addEventListener("close", resetElectricityCheckout);
+
+    document.getElementById("sign-out").addEventListener("click", showLogin);
+    updateBrowserNotificationControl();
+    if ("Notification" in window && window.isSecureContext && Notification.permission === "granted") {
+      reminderNotificationTimer = window.setInterval(checkBrowserReminders, 60000);
+      checkBrowserReminders();
+    }
+  </script>
+</body>
+</html>

@@ -10,7 +10,7 @@
     :root {
       color-scheme: light;
       --ink: #18241f;
-      --muted: #738078;
+      --muted: #626f67;
       --green: #2f7654;
       --green-dark: #245e42;
       --line: #e4e9e4;
@@ -373,6 +373,20 @@
       padding: 0;
     }
 
+    .dashboard .dashboard-intro { font-size: 15px; }
+    .dashboard .summary-label { font-size: 13px; }
+    .dashboard .summary-value { font-size: 24px; }
+    .dashboard .feature-panel > p { font-size: 13px; }
+    .dashboard .feature-stat { font-size: 13px; }
+    .dashboard .feature-list-item { font-size: 13px; }
+    .dashboard .feature-list-item span { font-size: 12px; }
+    .dashboard .feature-empty { font-size: 13px; }
+    .dashboard .admin-action { font-size: 11px; }
+    .dashboard .utility-reminder { font-size: 13px; }
+    .dashboard .utility-action { font-size: 12px; }
+    .dashboard .utility-detail-label { font-size: 11px; }
+    .dashboard .utility-detail-value { font-size: 13px; }
+
     .dashboard-header, .dashboard-title-row, .utility-card-top {
       display: flex;
       align-items: center;
@@ -396,7 +410,7 @@
 
     .dashboard-summary {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
       margin-top: 25px;
     }
@@ -577,6 +591,20 @@
       background: #fff;
       box-shadow: 0 4px 14px rgba(30, 52, 39, .035);
     }
+
+    .utility-card-label { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .demo-sample-badge { padding: 4px 7px; border-radius: 99px; background: #f0f3f0; color: #64736a; font-size: 9px; font-weight: 750; letter-spacing: .55px; text-transform: uppercase; }
+    .demo-banner { margin: 0 0 20px; padding: 10px 13px; border: 1px solid #dfe9df; border-radius: 10px; background: #f5f8f4; color: #46564c; font-size: 12px; line-height: 1.55; }
+    .demo-banner strong { color: var(--green-dark); }
+    .prototype-login-note { margin: 0 0 18px; padding: 11px 13px; border: 1px solid #dfe9df; border-radius: 10px; background: #f5f8f4; color: #53645a; font-size: 11px; line-height: 1.55; }
+    .prototype-login-note strong { color: var(--green-dark); }
+    .demo-data-status { min-height: 16px; margin: 0; color: var(--muted); font-size: 12px; }
+    .demo-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .utility-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); margin-top: 18px; }
+    .utility-list:empty { margin-top: 0; }
+    .notification-settings { margin-top: 12px; color: #536158; font-size: 12px; }
+    .notification-settings summary { width: fit-content; cursor: pointer; font-weight: 650; }
+    .notification-settings .field-help { margin-bottom: 0; }
 
     .utility-reminder {
       display: flex;
@@ -1012,6 +1040,7 @@
         <section class="form-panel" id="login-panel">
           <h2>Welcome back</h2>
           <p class="form-intro">Sign in to manage your household utilities.</p>
+          <p class="prototype-login-note"><strong>Prototype preview:</strong> Sign-in, payments, and admin access are simulated.</p>
           <form id="login-form">
             <div class="field">
               <label for="login-email">Email address</label>
@@ -1038,6 +1067,7 @@
         <section class="form-panel" id="signup-panel" hidden>
           <h2>Create your account</h2>
           <p class="form-intro">Start keeping all your utility bills in one place.</p>
+          <p class="prototype-login-note"><strong>Prototype only:</strong> this form opens a temporary preview, not a persistent account. Do not enter a password you use elsewhere.</p>
           <form id="signup-form">
             <div class="field">
               <label for="signup-name">Full name</label>
@@ -1062,8 +1092,8 @@
         </section>
 
         <section class="form-panel" id="forgot-panel" hidden>
-          <h2>Reset your password</h2>
-          <p class="form-intro">Enter the email address on your account and we'll send you a reset link.</p>
+          <h2>Password reset preview</h2>
+          <p class="form-intro">This screen demonstrates the reset flow. No email will be sent by this prototype.</p>
           <form data-message="Password reset is a design preview. Connect your email service to send a reset link.">
             <div class="field">
               <label for="reset-email">Email address</label>
@@ -1092,15 +1122,16 @@
           <div class="dashboard-title-row">
             <div>
               <h2>Your utilities</h2>
-              <p class="dashboard-intro">Manage electricity bills and mobile data in one place.</p>
+              <p class="dashboard-intro">Track upcoming bills, manage reminders, and explore simulated utility purchases.</p>
             </div>
             <div class="dashboard-actions">
-              <button class="add-utility-button secondary" id="open-admin-dashboard" type="button">Admin dashboard</button>
+              <button class="add-utility-button secondary" id="open-admin-dashboard" type="button">Admin preview</button>
               <button class="add-utility-button" id="show-utility-form" type="button">+ Add utility</button>
             </div>
           </div>
 
           <div id="dashboard-home">
+          <p class="demo-banner"><strong>Defence demo.</strong> Sample records are fictional; payments, receipts, and admin access are simulated. No live utility provider or payment service is connected.</p>
           <div class="dashboard-summary" aria-label="Utility account summary">
             <div class="summary-card">
               <span class="summary-label">Accounts added</span>
@@ -1110,6 +1141,13 @@
               <span class="summary-label">Total bill amount</span>
               <strong class="summary-value" id="upcoming-total">₦0</strong>
             </div>
+          </div>
+
+          <div class="utility-list" id="utility-list" aria-live="polite"></div>
+          <div class="empty-state" id="empty-state">No electricity bills added yet.<br> Add an account or load the sample records for a guided demo.</div>
+          <div class="demo-controls">
+            <button class="add-utility-button secondary" id="load-demo-data" type="button">Load sample demo data</button>
+            <p class="demo-data-status" id="demo-data-status" role="status" aria-live="polite"></p>
           </div>
 
           <section class="customer-features" aria-label="Bill and payment tools">
@@ -1125,14 +1163,18 @@
             </article>
             <article class="feature-panel" id="payment-reminders-panel">
               <div class="feature-panel-head">
-                <div><h3>Payment reminders</h3><p>Control reminders for tracked bills and data bundle expiry dates.</p></div>
+                <div><h3>Payment reminders</h3><p>Manage in-app reminders for tracked bills and data bundle expiry dates.</p></div>
                 <button class="admin-action feature-toggle" id="toggle-all-reminders" type="button" aria-pressed="true">Reminders on</button>
               </div>
               <div class="feature-stat"><span>Reminders enabled</span><strong id="enabled-reminder-count">0</strong></div>
               <ul class="feature-list" id="reminder-list"></ul>
               <p class="feature-empty" id="reminder-empty">Bills and internet purchases appear here with their reminder dates.</p>
-              <div class="feature-actions"><button class="admin-action" id="enable-browser-notifications" type="button">Enable browser notifications</button></div>
-              <p class="field-help notification-status" id="notification-status" role="status" aria-live="polite"></p>
+              <details class="notification-settings">
+                <summary>Optional browser notifications</summary>
+                <p class="field-help">Browser alerts require permission and this page to stay open.</p>
+                <div class="feature-actions"><button class="admin-action" id="enable-browser-notifications" type="button">Enable browser notifications</button></div>
+                <p class="field-help notification-status" id="notification-status" role="status" aria-live="polite"></p>
+              </details>
             </article>
             <article class="feature-panel" id="usage-analytics-panel">
               <div class="feature-panel-head">
@@ -1162,9 +1204,6 @@
               <p class="feature-empty" id="digital-receipts-empty">Completed payment receipts will appear here.</p>
             </article>
           </section>
-
-          <div class="utility-list" id="utility-list" aria-live="polite"></div>
-          <div class="empty-state" id="empty-state">No electricity bills added yet.<br> Buy an electricity bill or choose Internet to buy a mobile data bundle.</div>
 
           <div class="utility-form-wrap" id="utility-form-wrap" hidden>
             <h3>Buy an electricity bill or internet data</h3>
@@ -1618,6 +1657,7 @@
     const adminPayments = [];
     const adminActivity = [];
     const adminSettings = { displayName: "Meterly Admin", range: "all" };
+    let demoDataLoaded = false;
 
     function createUniqueReceiptReference(prefix) {
       for (let attempt = 0; attempt < 10; attempt += 1) {
@@ -2003,6 +2043,101 @@
       activeUserEmail = normalizedEmail;
     }
 
+    function getSampleDueDate(daysFromToday) {
+      const date = new Date();
+      date.setDate(date.getDate() + daysFromToday);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+
+    function getSamplePaymentDate(monthsAgo, day) {
+      const date = new Date();
+      const currentDay = date.getDate();
+      date.setDate(1);
+      date.setMonth(date.getMonth() - monthsAgo);
+      const currentMonth = monthsAgo === 0;
+      const latestDay = currentMonth
+        ? currentDay
+        : new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      date.setDate(Math.min(day, latestDay));
+      date.setHours(12, 0, 0, 0);
+      return date.toISOString();
+    }
+
+    function loadSampleDemoData() {
+      if (demoDataLoaded) return;
+      demoDataLoaded = true;
+      document.getElementById("load-demo-data").hidden = true;
+      document.getElementById("demo-data-status").textContent = "Fictional sample accounts and simulated receipts loaded for this session.";
+
+      renderUtility({
+        type: "Electricity",
+        provider: "AEDC (Abuja)",
+        accountNumber: "00000000001",
+        amount: 84200,
+        dueDate: getSampleDueDate(4),
+        isSample: true
+      });
+      renderUtility({
+        type: "Electricity",
+        provider: "IKEDC (Ikeja)",
+        accountNumber: "00000000002",
+        amount: 22600,
+        dueDate: getSampleDueDate(12),
+        isSample: true
+      });
+
+      const sampleDataPurchaseDate = getSamplePaymentDate(0, 12);
+      const sampleDataExpiryDate = new Date(sampleDataPurchaseDate);
+      sampleDataExpiryDate.setDate(sampleDataExpiryDate.getDate() + 7);
+      adminPayments.push(
+        {
+          reference: createUniqueReceiptReference("DEMO"),
+          type: "Electricity",
+          provider: "AEDC (Abuja)",
+          description: "Sample bill payment",
+          accountNumber: "00000000001",
+          method: "Card",
+          amount: 60000,
+          status: "Successful (demo)",
+          customer: activeUserEmail,
+          createdAt: getSamplePaymentDate(0, 6),
+          isSample: true
+        },
+        {
+          reference: createUniqueReceiptReference("DEMO"),
+          type: "Internet data",
+          provider: "MTN",
+          description: "3 GB · 7 days",
+          accountNumber: "+234 803 000 0000",
+          method: "Bank transfer",
+          amount: 1000,
+          status: "Successful (demo)",
+          customer: activeUserEmail,
+          createdAt: sampleDataPurchaseDate,
+          expiresAt: sampleDataExpiryDate.toISOString(),
+          reminderEnabled: true,
+          isSample: true
+        },
+        {
+          reference: createUniqueReceiptReference("DEMO"),
+          type: "Electricity",
+          provider: "IKEDC (Ikeja)",
+          description: "Sample bill payment",
+          accountNumber: "00000000002",
+          method: "Card",
+          amount: 18000,
+          status: "Successful (demo)",
+          customer: activeUserEmail,
+          createdAt: getSamplePaymentDate(1, 18),
+          isSample: true
+        }
+      );
+      recordAdminActivity("Sample demo data loaded", "Fictional accounts and simulated payment receipts");
+      updateDashboardSummary();
+    }
+
+    document.getElementById("load-demo-data").addEventListener("click", loadSampleDemoData);
+
     function returnToDashboard(dialog) {
       setUtilityFormOpen(false);
       if (dialog.open) dialog.close();
@@ -2020,6 +2155,9 @@
       utilityList.replaceChildren();
       adminPayments.length = 0;
       adminActivity.length = 0;
+      demoDataLoaded = false;
+      document.getElementById("load-demo-data").hidden = false;
+      document.getElementById("demo-data-status").textContent = "";
       sentReminderNotifications.clear();
       activeUserEmail = "";
       pendingElectricityPayment = null;
@@ -2162,12 +2300,22 @@
       card.dataset.accountNumber = data.accountNumber;
       card.dataset.dueDate = data.dueDate;
       card.dataset.customer = activeUserEmail;
+      card.dataset.isSample = String(Boolean(data.isSample));
 
       const top = document.createElement("div");
       top.className = "utility-card-top";
+      const label = document.createElement("div");
+      label.className = "utility-card-label";
       const kind = document.createElement("span");
       kind.className = "utility-kind";
       kind.textContent = data.type;
+      label.append(kind);
+      if (data.isSample) {
+        const badge = document.createElement("span");
+        badge.className = "demo-sample-badge";
+        badge.textContent = "Sample";
+        label.append(badge);
+      }
       const remove = document.createElement("button");
       remove.className = "remove-utility";
       remove.type = "button";
@@ -2178,7 +2326,7 @@
         card.remove();
         updateDashboardSummary();
       });
-      top.append(kind, remove);
+      top.append(label, remove);
 
       const reminderStatus = getReminderStatus(data.dueDate);
       const reminderLine = document.createElement("div");
@@ -2861,7 +3009,7 @@
         const name = document.createElement("strong");
         name.textContent = `${payment.type} · ${formatAdminCurrency(payment.amount)}`;
         const meta = document.createElement("span");
-        meta.textContent = `Demo receipt · ${payment.reference} · ${new Date(payment.createdAt).toLocaleDateString()}`;
+        meta.textContent = `${payment.isSample ? "Sample · " : ""}Demo receipt · ${payment.reference} · ${new Date(payment.createdAt).toLocaleDateString()}`;
         summary.append(name, meta);
         const actions = document.createElement("div");
         actions.className = "feature-actions";
@@ -3139,6 +3287,8 @@
     }
 
     function openAdminDashboard() {
+      if (!activeUserEmail) registerSessionUser("demo@meterly.test", "Admin demo preview");
+      loadSampleDemoData();
       showDashboard();
       dashboardHome.hidden = true;
       dashboardTitleRow.hidden = true;
@@ -3241,6 +3391,9 @@
       adminUsers.length = 0;
       adminPayments.length = 0;
       adminActivity.length = 0;
+      demoDataLoaded = false;
+      document.getElementById("load-demo-data").hidden = false;
+      document.getElementById("demo-data-status").textContent = "";
       updateDashboardSummary();
       document.getElementById("admin-data-status").textContent = "Session users, utility accounts, payments, and activity have been cleared.";
       recordAdminActivity("Session data cleared", activeUserEmail || "Demo session");
